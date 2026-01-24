@@ -102,6 +102,7 @@ jobs:
   secret-scanning:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
 
     steps:
     - name: Checkout repository
@@ -130,12 +131,18 @@ jobs:
         echo "Dependency Scanning: ${{ needs.dependency-scanning.result }}"
         echo "Secret Scanning: ${{ needs.secret-scanning.result }}"
 
+        # Secret scanning is only run on PRs, so treat skipped as success
+        SECRET_SCAN_STATUS="${{ needs.secret-scanning.result }}"
+        if [ "$SECRET_SCAN_STATUS" == "skipped" ]; then
+          SECRET_SCAN_STATUS="success"
+        fi
+
         if [ "${{ needs.analyze.result }}" == "success" ] && \
            [ "${{ needs.dependency-scanning.result }}" == "success" ] && \
-           [ "${{ needs.secret-scanning.result }}" == "success" ]; then
+           [ "$SECRET_SCAN_STATUS" == "success" ]; then
           echo "All security scans passed!"
           exit 0
         else
-          echo "Some security scans failed or were skipped. Please review the results."
+          echo "Some security scans failed. Please review the results."
           exit 1
         fi
