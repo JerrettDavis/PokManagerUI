@@ -1,0 +1,193 @@
+@page "/backups/create"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using System.ComponentModel.DataAnnotations
+@inject BackupApiClient BackupClient
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Create Backup - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Create Server Backup</MudText>
+
+<MudPaper Class="pa-4" Elevation="2" MaxWidth="800px">
+    <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="mb-2">Backup Configuration</MudText>
+                <MudDivider Class="mb-4" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudSelect @bind-Value="_model.InstanceId"
+                           Label="Server Instance"
+                           Required="true"
+                           RequiredError="Please select an instance"
+                           Variant="Variant.Outlined"
+                           AnchorOrigin="Origin.BottomCenter">
+                    @foreach (var instance in _instances)
+                    {
+                        <MudSelectItem Value="@instance.Id">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText>@instance.Name</MudText>
+                                <MudChip T="string" Size="Size.Small" Color="GetStatusColor(instance.Status)">
+                                    @instance.Status
+                                </MudChip>
+                            </MudStack>
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.Description"
+                              Label="Description (Optional)"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              MaxLength="500"
+                              Counter="500"
+                              HelperText="Add a description to help identify this backup" />
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelect @bind-Value="_model.CompressionFormat"
+                           Label="Compression Format"
+                           Variant="Variant.Outlined"
+                           AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="CompressionFormat.Gzip">
+                        <MudStack Row="false" Spacing="0">
+                            <MudText>Gzip</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                Standard compression (recommended)
+                            </MudText>
+                        </MudStack>
+                    </MudSelectItem>
+                    <MudSelectItem Value="CompressionFormat.Zstd">
+                        <MudStack Row="false" Spacing="0">
+                            <MudText>Zstandard (Zstd)</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                Better compression ratio, faster
+                            </MudText>
+                        </MudStack>
+                    </MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Additional Options</MudText>
+                <MudStack Spacing="2">
+                    <MudSwitch T="bool" @bind-Value="_model.IncludeConfiguration"
+                               Label="Include Configuration Files"
+                               Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_model.IncludeLogs"
+                               Label="Include Log Files"
+                               Color="Color.Primary" />
+                </MudStack>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Info" Class="my-3">
+                    <MudText Typo="Typo.body2">
+                        Creating a backup will not stop the server. The backup will capture the current state
+                        of the save files and selected configuration.
+                    </MudText>
+                </MudAlert>
+            </MudItem>
+
+            @if (_creating)
+            {
+                <MudItem xs="12">
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+                    <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-text-secondary">
+                        Creating backup... This may take a few moments.
+                    </MudText>
+                </MudItem>
+            }
+
+            <MudItem xs="12">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="Cancel"
+                               Disabled="_creating">
+                        Cancel
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               ButtonType="ButtonType.Submit"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Disabled="_creating || _instances.Count == 0">
+                        @(_creating ? "Creating..." : "Create Backup")
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private CreateBackupViewModel _model = new();
+    private List<InstanceViewModel> _instances = new();
+    private bool _creating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstancesAsync();
+    }
+
+    private async Task LoadInstancesAsync()
+    {
+        try
+        {
+            _instances = await BackupClient.GetInstancesAsync();
+
+            if (_instances.Count == 1)
+            {
+                // Auto-select if only one instance
+                _model.InstanceId = _instances[0].Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading instances: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        _creating = true;
+        try
+        {
+            var backup = await BackupClient.CreateBackupAsync(_model);
+            Snackbar.Add($"Backup created successfully: {backup.BackupId}", Severity.Success);
+            Navigation.NavigateTo("/backups");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating backup: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _creating = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/backups");
+    }
+
+    private Color GetStatusColor(InstanceStatus status)
+    {
+        return status switch
+        {
+            InstanceStatus.Running => Color.Success,
+            InstanceStatus.Stopped => Color.Default,
+            InstanceStatus.Starting => Color.Info,
+            InstanceStatus.Stopping => Color.Warning,
+            InstanceStatus.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

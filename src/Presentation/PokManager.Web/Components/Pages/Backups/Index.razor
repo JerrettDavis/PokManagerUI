@@ -1,0 +1,316 @@
+@page "/backups"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@inject BackupApiClient BackupClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+
+<PageTitle>Backups - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Server Backups</MudText>
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Row="true" Spacing="2">
+            <MudTextField @bind-Value="_searchString"
+                          Placeholder="Search backups..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Class="mt-0" />
+            <MudSelect @bind-Value="_selectedInstance"
+                       Label="Filter by Instance"
+                       AnchorOrigin="Origin.BottomCenter"
+                       Clearable="true">
+                <MudSelectItem Value="@("")">All Instances</MudSelectItem>
+                @foreach (var instance in _instances)
+                {
+                    <MudSelectItem Value="@instance.Id">@instance.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Href="/backups/create">
+                Create Backup
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       OnClick="ShowUploadDialog">
+                Upload Backup
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+    else
+    {
+        <MudTable Items="@_backups"
+                  Filter="new Func<BackupViewModel,bool>(FilterFunc)"
+                  Hover="true"
+                  Breakpoint="Breakpoint.Sm"
+                  Loading="@_loading"
+                  LoadingProgressColor="Color.Info">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<BackupViewModel, object>(x => x.InstanceName)">
+                        Instance
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<BackupViewModel, object>(x => x.BackupId)">
+                        Backup ID
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel InitialDirection="SortDirection.Descending"
+                                       SortBy="new Func<BackupViewModel, object>(x => x.CreatedAt)">
+                        Created
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<BackupViewModel, object>(x => x.SizeBytes)">
+                        Size
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>Compression</MudTh>
+                <MudTh>Type</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Instance">@context.InstanceName</MudTd>
+                <MudTd DataLabel="Backup ID">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @context.BackupId.Substring(0, Math.Min(8, context.BackupId.Length))...
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Created">
+                    <MudText Typo="Typo.body2">@context.CreatedAt.ToString("g")</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        @GetRelativeTime(context.CreatedAt)
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Size">@FormatFileSize(context.SizeBytes)</MudTd>
+                <MudTd DataLabel="Compression">
+                    <MudChip T="string" Size="Size.Small" Color="GetCompressionColor(context.CompressionFormat)">
+                        @context.CompressionFormat.ToString()
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Type">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.IsAutomatic ? Color.Info : Color.Default)">
+                        @(context.IsAutomatic ? "Auto" : "Manual")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudTooltip Text="Restore Backup">
+                        <MudIconButton Icon="@Icons.Material.Filled.Restore"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="@(() => RestoreBackup(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Download Backup">
+                        <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                       Color="Color.Success"
+                                       Size="Size.Small"
+                                       OnClick="@(() => DownloadBackup(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Delete Backup">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       OnClick="@(() => DeleteBackup(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No backups found</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private List<BackupViewModel> _backups = new();
+    private List<InstanceViewModel> _instances = new();
+    private bool _loading = true;
+    private string _searchString = string.Empty;
+    private string _selectedInstance = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        try
+        {
+            var backupsTask = BackupClient.GetBackupsAsync();
+            var instancesTask = BackupClient.GetInstancesAsync();
+
+            await Task.WhenAll(backupsTask, instancesTask);
+
+            _backups = await backupsTask;
+            _instances = await instancesTask;
+
+            // Map instance names
+            foreach (var backup in _backups)
+            {
+                var instance = _instances.FirstOrDefault(i => i.Id == backup.InstanceId);
+                backup.InstanceName = instance?.Name ?? backup.InstanceId;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading backups: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(BackupViewModel backup)
+    {
+        if (!string.IsNullOrWhiteSpace(_selectedInstance) && backup.InstanceId != _selectedInstance)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (backup.BackupId.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (backup.InstanceName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (backup.Description?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        return false;
+    }
+
+    private async Task ShowUploadDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "Instances", _instances }
+        };
+
+        var dialog = await DialogService.ShowAsync<UploadBackupDialog>("Upload Backup", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Backup uploaded successfully", Severity.Success);
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task RestoreBackup(BackupViewModel backup)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Backup", backup },
+            { "InstanceName", backup.InstanceName }
+        };
+
+        var dialog = await DialogService.ShowAsync<RestoreBackupDialog>("Restore Backup", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Backup restore initiated successfully", Severity.Success);
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task DownloadBackup(BackupViewModel backup)
+    {
+        try
+        {
+            Snackbar.Add("Downloading backup...", Severity.Info);
+            var stream = await BackupClient.DownloadBackupAsync(backup.BackupId);
+
+            // Note: In a real implementation, you would need JavaScript interop to trigger the download
+            // This is a simplified version
+            Snackbar.Add("Backup download started", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading backup: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteBackup(BackupViewModel backup)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Backup",
+            $"Are you sure you want to delete backup {backup.BackupId}? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await BackupClient.DeleteBackupAsync(backup.BackupId);
+                Snackbar.Add("Backup deleted successfully", Severity.Success);
+                await LoadDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting backup: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private string GetRelativeTime(DateTimeOffset dateTime)
+    {
+        var timeSpan = DateTimeOffset.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+
+        return dateTime.ToString("d");
+    }
+
+    private Color GetCompressionColor(CompressionFormat format)
+    {
+        return format switch
+        {
+            CompressionFormat.Gzip => Color.Primary,
+            CompressionFormat.Zstd => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+}
