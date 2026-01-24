@@ -28,40 +28,6 @@ jobs:
         allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
         comment-summary-in-pr: always
 
-  license-check:
-    name: License Compliance Check
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Install dotnet-project-licenses
-      run: dotnet tool install --global dotnet-project-licenses
-
-    - name: Restore dependencies
-      run: dotnet restore PokManager.sln
-
-    - name: Generate license report
-      run: |
-        dotnet-project-licenses --input PokManager.sln --output-directory ./licenses --export-license-texts --json
-
-        echo "## License Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "License report generated. Review licenses directory for details." >> $GITHUB_STEP_SUMMARY
-
-    - name: Upload license report
-      uses: actions/upload-artifact@v4
-      with:
-        name: license-report
-        path: licenses/
-        retention-days: 30
-
   vulnerability-check:
     name: Vulnerability Check
     runs-on: ubuntu-latest
@@ -190,7 +156,7 @@ jobs:
 
   dependency-review-summary:
     name: Review Summary
-    needs: [dependency-review, license-check, vulnerability-check, dependency-diff]
+    needs: [dependency-review, vulnerability-check, dependency-diff]
     runs-on: ubuntu-latest
     if: always()
 
@@ -200,12 +166,10 @@ jobs:
         echo "## Dependency Review Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- Dependency Review: ${{ needs.dependency-review.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- License Check: ${{ needs.license-check.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Vulnerability Check: ${{ needs.vulnerability-check.result }}" >> $GITHUB_STEP_SUMMARY
         echo "- Dependency Diff: ${{ needs.dependency-diff.result }}" >> $GITHUB_STEP_SUMMARY
 
         if [ "${{ needs.dependency-review.result }}" == "success" ] && \
-           [ "${{ needs.license-check.result }}" == "success" ] && \
            [ "${{ needs.vulnerability-check.result }}" == "success" ] && \
            [ "${{ needs.dependency-diff.result }}" == "success" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY
