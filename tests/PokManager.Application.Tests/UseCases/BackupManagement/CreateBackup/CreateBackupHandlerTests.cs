@@ -1,4 +1,5 @@
 using FluentAssertions;
+using NSubstitute;
 using PokManager.Application.Models;
 using PokManager.Application.Ports;
 using PokManager.Application.UseCases.BackupManagement.CreateBackup;
@@ -19,6 +20,7 @@ public class CreateBackupHandlerTests
     private readonly InMemoryOperationLockManager _lockManager;
     private readonly InMemoryAuditSink _auditSink;
     private readonly FakeClock _clock;
+    private readonly ICacheInvalidationService _cacheInvalidation;
     private readonly CreateBackupHandler _handler;
 
     public CreateBackupHandlerTests()
@@ -28,13 +30,15 @@ public class CreateBackupHandlerTests
         _lockManager = new InMemoryOperationLockManager();
         _auditSink = new InMemoryAuditSink();
         _clock = new FakeClock();
+        _cacheInvalidation = Substitute.For<ICacheInvalidationService>();
 
         _handler = new CreateBackupHandler(
             _pokManagerClient,
             _backupStore,
             _lockManager,
             _auditSink,
-            _clock
+            _clock,
+            _cacheInvalidation
         );
     }
 

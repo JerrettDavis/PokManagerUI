@@ -1,4 +1,6 @@
 using FluentAssertions;
+using NSubstitute;
+using PokManager.Application.Ports;
 using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
 using PokManager.Domain.Common;
 using PokManager.Domain.Enumerations;
@@ -17,6 +19,7 @@ public class StartInstanceHandlerTests
     private readonly InMemoryOperationLockManager _fakeLockManager = new();
     private readonly InMemoryAuditSink _fakeAuditSink = new();
     private readonly FakeClock _fakeClock = new();
+    private readonly ICacheInvalidationService _fakeCacheInvalidation = Substitute.For<ICacheInvalidationService>();
     private StartInstanceHandler _handler = null!;
     private StartInstanceRequest _request = null!;
     private Result<StartInstanceResponse> _result = null!;
@@ -27,7 +30,8 @@ public class StartInstanceHandlerTests
             _fakeClient,
             _fakeLockManager,
             _fakeAuditSink,
-            _fakeClock);
+            _fakeClock,
+            _fakeCacheInvalidation);
     }
 
     [Fact]

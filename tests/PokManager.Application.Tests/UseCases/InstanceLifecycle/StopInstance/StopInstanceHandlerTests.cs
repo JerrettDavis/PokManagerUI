@@ -1,4 +1,5 @@
 using FluentAssertions;
+using NSubstitute;
 using PokManager.Application.Ports;
 using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
 using PokManager.Domain.Common;
@@ -19,12 +20,13 @@ public class StopInstanceHandlerTests
     private readonly InMemoryOperationLockManager _lockManager = new();
     private readonly InMemoryAuditSink _auditSink = new();
     private readonly FakeClock _clock = new();
+    private readonly ICacheInvalidationService _cacheInvalidation = Substitute.For<ICacheInvalidationService>();
     private StopInstanceHandler _handler = null!;
     private Result<StopInstanceResponse> _result = null!;
 
     private void InitializeHandler()
     {
-        _handler = new StopInstanceHandler(_fakeClient, _lockManager, _auditSink, _clock);
+        _handler = new StopInstanceHandler(_fakeClient, _lockManager, _auditSink, _clock, _cacheInvalidation);
     }
 
     [Fact]

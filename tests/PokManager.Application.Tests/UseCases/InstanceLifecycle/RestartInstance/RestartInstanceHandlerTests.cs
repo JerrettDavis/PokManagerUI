@@ -1,5 +1,7 @@
 using FluentAssertions;
+using NSubstitute;
 using PokManager.Application.Models;
+using PokManager.Application.Ports;
 using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
 using PokManager.Domain.Enumerations;
 using PokManager.Infrastructure.Tests.Fakes;
@@ -17,13 +19,14 @@ public class RestartInstanceHandlerTests
     private readonly InMemoryOperationLockManager _lockManager = new();
     private readonly InMemoryAuditSink _auditSink = new();
     private readonly FakeClock _clock = new();
+    private readonly ICacheInvalidationService _cacheInvalidation = Substitute.For<ICacheInvalidationService>();
     private RestartInstanceHandler _handler = null!;
     private RestartInstanceRequest _request = null!;
     private Domain.Common.Result<RestartInstanceResponse> _result = null!;
 
     private void InitializeHandler()
     {
-        _handler = new RestartInstanceHandler(_fakeClient, _lockManager, _auditSink, _clock);
+        _handler = new RestartInstanceHandler(_fakeClient, _lockManager, _auditSink, _clock, _cacheInvalidation);
     }
 
     [Fact]
