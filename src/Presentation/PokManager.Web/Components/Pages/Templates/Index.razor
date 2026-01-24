@@ -1,0 +1,256 @@
+@page "/templates"
+@using PokManager.Web.Services
+@using PokManager.Web.Models
+@using PokManager.Application.UseCases.ConfigurationTemplates.ListTemplates
+@inject ConfigurationTemplateApiClient TemplateClient
+@inject InstanceService InstanceService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Configuration Templates</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Configuration Templates</MudText>
+    <MudText Typo="Typo.body1" Class="mb-6">
+        Apply preset templates or create your own custom server configurations.
+    </MudText>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="searchText" Label="Search" Placeholder="Search templates..." Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="categoryFilter" Label="Category" Clearable="true">
+                    <MudSelectItem Value="@((string?)null)">All Categories</MudSelectItem>
+                    <MudSelectItem Value="@("PvP")">PvP</MudSelectItem>
+                    <MudSelectItem Value="@("PvE")">PvE</MudSelectItem>
+                    <MudSelectItem Value="@("Balanced")">Balanced</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="typeFilter" Label="Type" Clearable="true">
+                    <MudSelectItem Value="@((int?)null)">All Types</MudSelectItem>
+                    <MudSelectItem Value="@(0)">Preset</MudSelectItem>
+                    <MudSelectItem Value="@(1)">User Created</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton OnClick="LoadTemplates" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                    Refresh
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (filteredTemplates.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No templates found</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var template in filteredTemplates)
+            {
+                <MudItem xs="12" md="6" lg="4">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@template.Name</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudChip T="string" Size="Size.Small" Color="GetCategoryColor(template.Category)">
+                                    @template.Category
+                                </MudChip>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2" Class="mb-2">@template.Description</MudText>
+                            <MudDivider Class="my-2" />
+                            <MudText Typo="Typo.caption">Difficulty: @template.Difficulty</MudText>
+                            <MudText Typo="Typo.caption">Type: @(template.Type == 0 ? "Preset" : "User Created")</MudText>
+                            <MudText Typo="Typo.caption">Used: @template.TimesUsed times</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton OnClick="@(() => ShowApplyDialog(template.TemplateId, template.Name))"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Small">
+                                Apply
+                            </MudButton>
+                            @if (template.Type == 1) // User created
+                            {
+                                <MudButton OnClick="@(() => DeleteTemplate(template.TemplateId))"
+                                           Variant="Variant.Text"
+                                           Color="Color.Error"
+                                           Size="Size.Small">
+                                    Delete
+                                </MudButton>
+                            }
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+<!-- Apply Template Dialog -->
+<MudDialog @bind-IsVisible="showApplyDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Apply Template: @selectedTemplateName</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect @bind-Value="selectedInstanceId" Label="Select Instance" Required="true">
+            @foreach (var instance in instances)
+            {
+                <MudSelectItem Value="@instance.Id">@instance.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudCheckBox T="bool" @bind-Checked="createBackup" Label="Create backup before applying" Color="Color.Primary" Class="mt-4" />
+        <MudCheckBox T="bool" @bind-Checked="restartIfNeeded" Label="Restart instance if needed" Color="Color.Primary" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => showApplyDialog = false)">Cancel</MudButton>
+        <MudButton OnClick="ApplyTemplateToInstance" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(string.IsNullOrWhiteSpace(selectedInstanceId))">
+            Apply Template
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<TemplateSummaryDto> templates = new();
+    private List<TemplateSummaryDto> filteredTemplates = new();
+    private List<InstanceViewModel> instances = new();
+    private bool loading = true;
+
+    private string searchText = "";
+    private string? categoryFilter = null;
+    private int? typeFilter = null;
+
+    private bool showApplyDialog = false;
+    private string selectedTemplateId = "";
+    private string selectedTemplateName = "";
+    private string selectedInstanceId = "";
+    private bool createBackup = true;
+    private bool restartIfNeeded = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstances();
+        await LoadTemplates();
+    }
+
+    private async Task LoadInstances()
+    {
+        try
+        {
+            var result = await InstanceService.GetAllInstancesAsync();
+            if (result.IsSuccess)
+            {
+                instances = result.Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load instances: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadTemplates()
+    {
+        loading = true;
+        try
+        {
+            templates = await TemplateClient.GetTemplatesAsync(categoryFilter, typeFilter);
+            FilterTemplates();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load templates: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterTemplates()
+    {
+        filteredTemplates = templates.Where(t =>
+            string.IsNullOrWhiteSpace(searchText) ||
+            t.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            t.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+
+    private void ShowApplyDialog(string templateId, string templateName)
+    {
+        selectedTemplateId = templateId;
+        selectedTemplateName = templateName;
+        selectedInstanceId = instances.FirstOrDefault()?.Id ?? "";
+        createBackup = true;
+        restartIfNeeded = true;
+        showApplyDialog = true;
+    }
+
+    private async Task ApplyTemplateToInstance()
+    {
+        if (string.IsNullOrWhiteSpace(selectedInstanceId))
+        {
+            Snackbar.Add("Please select an instance", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var result = await TemplateClient.ApplyTemplateAsync(
+                selectedTemplateId,
+                selectedInstanceId,
+                createBackup,
+                restartIfNeeded
+            );
+
+            if (result != null && result.Success)
+            {
+                Snackbar.Add($"Template applied successfully! {result.ChangedSettings.Length} settings changed.", Severity.Success);
+                showApplyDialog = false;
+                await LoadTemplates(); // Refresh to update usage count
+            }
+            else
+            {
+                Snackbar.Add("Failed to apply template", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error applying template: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteTemplate(string templateId)
+    {
+        try
+        {
+            await TemplateClient.DeleteTemplateAsync(templateId);
+            Snackbar.Add("Template deleted successfully", Severity.Success);
+            await LoadTemplates();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete template: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetCategoryColor(string category) => category switch
+    {
+        "PvP" => Color.Error,
+        "PvE" => Color.Success,
+        "Balanced" => Color.Info,
+        _ => Color.Default
+    };
+}

@@ -1,0 +1,336 @@
+@page "/instances"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using MudBlazor
+@rendermode InteractiveServer
+
+<PageTitle>Instances - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Server Instances</MudText>
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudStack Row="true" Spacing="2">
+            <MudTextField @bind-Value="_searchString"
+                          Placeholder="Search instances..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Style="min-width: 300px;" />
+
+            <MudSelect @bind-Value="_statusFilter"
+                       Label="Filter by Status"
+                       T="InstanceStatus?"
+                       Clearable="true"
+                       Style="min-width: 150px;">
+                <MudSelectItem T="InstanceStatus?" Value="@((InstanceStatus?)null)">All</MudSelectItem>
+                <MudSelectItem T="InstanceStatus?" Value="@InstanceStatus.Running">Running</MudSelectItem>
+                <MudSelectItem T="InstanceStatus?" Value="@InstanceStatus.Stopped">Stopped</MudSelectItem>
+                <MudSelectItem T="InstanceStatus?" Value="@InstanceStatus.Starting">Starting</MudSelectItem>
+                <MudSelectItem T="InstanceStatus?" Value="@InstanceStatus.Stopping">Stopping</MudSelectItem>
+                <MudSelectItem T="InstanceStatus?" Value="@InstanceStatus.Error">Error</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect @bind-Value="_healthFilter"
+                       Label="Filter by Health"
+                       T="InstanceHealth?"
+                       Clearable="true"
+                       Style="min-width: 150px;">
+                <MudSelectItem T="InstanceHealth?" Value="@((InstanceHealth?)null)">All</MudSelectItem>
+                <MudSelectItem T="InstanceHealth?" Value="@InstanceHealth.Healthy">Healthy</MudSelectItem>
+                <MudSelectItem T="InstanceHealth?" Value="@InstanceHealth.Degraded">Degraded</MudSelectItem>
+                <MudSelectItem T="InstanceHealth?" Value="@InstanceHealth.Unhealthy">Unhealthy</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+
+        <MudStack Row="true" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                          Color="Color.Primary"
+                          OnClick="LoadInstancesAsync"
+                          Title="Refresh" />
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Href="/instances/create">
+                Create Instance
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MudTable Items="@_instances"
+              Filter="new Func<InstanceViewModel,bool>(FilterFunc)"
+              Hover="true"
+              Breakpoint="Breakpoint.Sm"
+              Loading="_loading"
+              LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Health</MudTh>
+            <MudTh>Players</MudTh>
+            <MudTh>Map</MudTh>
+            <MudTh>Mods</MudTh>
+            <MudTh>Uptime</MudTh>
+            <MudTh Style="text-align: right;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">
+                <MudLink Href="@($"/instances/{context.Id}")" Typo="Typo.body2">
+                    <strong>@context.Name</strong>
+                </MudLink>
+                @if (!string.IsNullOrEmpty(context.SessionName) && context.SessionName != context.Name)
+                {
+                    <br />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.SessionName</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled">
+                    @context.Status
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Health">
+                <MudTooltip Text="@context.Health.ToString()">
+                    <MudIcon Icon="@GetHealthIcon(context.Health)" Color="@GetHealthColor(context.Health)" />
+                </MudTooltip>
+            </MudTd>
+            <MudTd DataLabel="Players">
+                @context.CurrentPlayers / @context.MaxPlayers
+            </MudTd>
+            <MudTd DataLabel="Map">
+                <MudText Typo="Typo.body2">@context.ServerMap</MudText>
+            </MudTd>
+            <MudTd DataLabel="Mods">
+                @if (context.ModIds?.Any() == true)
+                {
+                    <MudTooltip>
+                        <ChildContent>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                                @context.ModIds.Count mod(s)
+                            </MudChip>
+                        </ChildContent>
+                        <TooltipContent>
+                            <MudText Typo="Typo.body2" Class="mb-2"><strong>Installed Mods:</strong></MudText>
+                            @foreach (var modId in context.ModIds.Take(10))
+                            {
+                                <MudText Typo="Typo.caption">@modId</MudText>
+                            }
+                            @if (context.ModIds.Count > 10)
+                            {
+                                <MudText Typo="Typo.caption">...and @(context.ModIds.Count - 10) more</MudText>
+                            }
+                        </TooltipContent>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">None</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Uptime">@context.Uptime</MudTd>
+            <MudTd DataLabel="Actions" Style="text-align: right;">
+                <MudTooltip Text="Start">
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   OnClick="() => StartInstanceAsync(context)"
+                                   Disabled="@(context.Status == InstanceStatus.Running || context.Status == InstanceStatus.Starting)" />
+                </MudTooltip>
+                <MudTooltip Text="Stop">
+                    <MudIconButton Icon="@Icons.Material.Filled.Stop"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="() => StopInstanceAsync(context)"
+                                   Disabled="@(context.Status == InstanceStatus.Stopped || context.Status == InstanceStatus.Stopping)" />
+                </MudTooltip>
+                <MudTooltip Text="Restart">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Warning"
+                                   Size="Size.Small"
+                                   OnClick="() => RestartInstanceAsync(context)"
+                                   Disabled="@(context.Status != InstanceStatus.Running)" />
+                </MudTooltip>
+                <MudTooltip Text="View Details">
+                    <MudIconButton Icon="@Icons.Material.Filled.Info"
+                                   Color="Color.Info"
+                                   Size="Size.Small"
+                                   Href="@($"/instances/{context.Id}")" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Align="Align.Center" Class="py-4">
+                No instances found. Create your first instance to get started!
+            </MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private InstanceService InstanceService { get; set; } = default!;
+
+    private List<InstanceViewModel> _instances = new();
+    private string _searchString = "";
+    private InstanceStatus? _statusFilter = null;
+    private InstanceHealth? _healthFilter = null;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstancesAsync();
+    }
+
+    private async Task LoadInstancesAsync()
+    {
+        _loading = true;
+        try
+        {
+            var result = await InstanceService.GetAllInstancesAsync();
+            if (result.IsSuccess)
+            {
+                _instances = result.Value;
+            }
+            else
+            {
+                Snackbar.Add($"Failed to load instances: {result.Error}", Severity.Error);
+                _instances = new List<InstanceViewModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading instances: {ex.Message}", Severity.Error);
+            _instances = new List<InstanceViewModel>();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(InstanceViewModel instance)
+    {
+        if (!string.IsNullOrWhiteSpace(_searchString))
+        {
+            if (!instance.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase) &&
+                !instance.ServerMap.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        if (_statusFilter.HasValue && instance.Status != _statusFilter.Value)
+        {
+            return false;
+        }
+
+        if (_healthFilter.HasValue && instance.Health != _healthFilter.Value)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private Color GetStatusColor(InstanceStatus status)
+    {
+        return status switch
+        {
+            InstanceStatus.Running => Color.Success,
+            InstanceStatus.Stopped => Color.Default,
+            InstanceStatus.Starting => Color.Info,
+            InstanceStatus.Stopping => Color.Warning,
+            InstanceStatus.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private string GetHealthIcon(InstanceHealth health)
+    {
+        return health switch
+        {
+            InstanceHealth.Healthy => Icons.Material.Filled.CheckCircle,
+            InstanceHealth.Degraded => Icons.Material.Filled.Warning,
+            InstanceHealth.Unhealthy => Icons.Material.Filled.Error,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private Color GetHealthColor(InstanceHealth health)
+    {
+        return health switch
+        {
+            InstanceHealth.Healthy => Color.Success,
+            InstanceHealth.Degraded => Color.Warning,
+            InstanceHealth.Unhealthy => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private async Task StartInstanceAsync(InstanceViewModel instance)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Start Instance",
+            $"Are you sure you want to start '{instance.Name}'?",
+            yesText: "Start", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var startResult = await InstanceService.StartInstanceAsync(instance.Id);
+            if (startResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{instance.Name}' is starting...", Severity.Success);
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to start instance: {startResult.Error}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task StopInstanceAsync(InstanceViewModel instance)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Stop Instance",
+            $"Are you sure you want to stop '{instance.Name}'? All connected players will be disconnected.",
+            yesText: "Stop", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var stopResult = await InstanceService.StopInstanceAsync(instance.Id);
+            if (stopResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{instance.Name}' is stopping...", Severity.Success);
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to stop instance: {stopResult.Error}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task RestartInstanceAsync(InstanceViewModel instance)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Restart Instance",
+            $"Are you sure you want to restart '{instance.Name}'? All connected players will be temporarily disconnected.",
+            yesText: "Restart", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var restartResult = await InstanceService.RestartInstanceAsync(instance.Id);
+            if (restartResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{instance.Name}' is restarting...", Severity.Success);
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to restart instance: {restartResult.Error}", Severity.Error);
+            }
+        }
+    }
+}

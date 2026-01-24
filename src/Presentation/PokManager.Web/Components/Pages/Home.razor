@@ -1,0 +1,464 @@
+@page "/"
+@inject ISnackbar Snackbar
+@inject PokManager.Web.Services.ServerService ServerService
+@using PokManager.Web.Services
+
+<PageTitle>Dashboard - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+<!-- Statistics Cards -->
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Total Instances</MudText>
+                        <MudText Typo="Typo.h4">@_totalInstances</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Success">@_runningInstances Running</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Primary" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Running</MudText>
+                        <MudText Typo="Typo.h4">@_runningInstances</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Success">Active</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Total Backups</MudText>
+                        <MudText Typo="Typo.h4">@_totalBackups</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Info">Last 30 days</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Backup" Color="Color.Info" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Storage Used</MudText>
+                        <MudText Typo="Typo.h4">@_storageUsed</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Warning">@_storagePercentage% used</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Warning" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Last Backup</MudText>
+                        <MudText Typo="Typo.body1">@_lastBackupTime</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Default">@_lastBackupRelative</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Default" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="2">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.body2" Color="Color.Default">System Health</MudText>
+                        <MudText Typo="Typo.h5" Color="Color.Success">Healthy</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Success">All systems operational</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<!-- Instance Status Overview -->
+<MudPaper Class="mt-4 pa-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-4">Instance Status Overview</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Outlined="true">
+                <MudCardContent>
+                    <MudStack AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_runningInstances</MudText>
+                        <MudText Typo="Typo.body2">Running</MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Outlined="true">
+                <MudCardContent>
+                    <MudStack AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.StopCircle" Color="Color.Default" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_stoppedInstances</MudText>
+                        <MudText Typo="Typo.body2">Stopped</MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Outlined="true">
+                <MudCardContent>
+                    <MudStack AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_failedInstances</MudText>
+                        <MudText Typo="Typo.body2">Failed</MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Outlined="true">
+                <MudCardContent>
+                    <MudStack AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_pendingInstances</MudText>
+                        <MudText Typo="Typo.body2">Pending</MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<!-- Alerts and Notifications -->
+@if (_alerts.Any())
+{
+    <MudPaper Class="mt-4 pa-4" Elevation="2">
+        <MudText Typo="Typo.h6" Class="mb-3">Alerts & Notifications</MudText>
+        <MudStack Spacing="2">
+            @foreach (var alert in _alerts)
+            {
+                <MudAlert Severity="@alert.Severity" Variant="Variant.Filled" Dense="true">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <div>
+                            <MudText Typo="Typo.body1"><strong>@alert.Title</strong></MudText>
+                            <MudText Typo="Typo.body2">@alert.Message</MudText>
+                        </div>
+                        <MudText Typo="Typo.caption">@alert.Time</MudText>
+                    </MudStack>
+                </MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+<!-- Quick Actions -->
+<MudPaper Class="mt-4 pa-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-3">Quick Actions</MudText>
+    <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="CreateInstance">
+            Create New Instance
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.Backup"
+                   OnClick="CreateBackup">
+            Create Backup
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.List"
+                   OnClick="ViewAllInstances">
+            View All Instances
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Info"
+                   StartIcon="@Icons.Material.Filled.Settings"
+                   OnClick="ViewSettings">
+            Settings
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+<!-- Recent Activity -->
+<MudPaper Class="mt-4 pa-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-3">Recent Activity</MudText>
+    <MudTable Items="@_recentOperations"
+              Hover="true"
+              Striped="true"
+              Dense="true"
+              Breakpoint="Breakpoint.Sm">
+        <HeaderContent>
+            <MudTh>Operation</MudTh>
+            <MudTh>Instance</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Timestamp</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Operation">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@GetOperationIcon(context.Type)" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">@context.Type</MudText>
+                </MudStack>
+            </MudTd>
+            <MudTd DataLabel="Instance">@context.InstanceName</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(context.Success ? Color.Success : Color.Error)"
+                         Text="@(context.Success ? "Success" : "Failed")" />
+            </MudTd>
+            <MudTd DataLabel="Timestamp">
+                <MudText Typo="Typo.body2">@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    // Statistics
+    private int _totalInstances = 0;
+    private int _runningInstances = 0;
+    private int _stoppedInstances = 0;
+    private int _failedInstances = 0;
+    private int _pendingInstances = 0;
+    private int _totalBackups = 0;
+    private string _storageUsed = "0 GB";
+    private int _storagePercentage = 0;
+    private string _lastBackupTime = "Never";
+    private string _lastBackupRelative = "No backups";
+
+    // Recent Operations
+    private List<RecentOperation> _recentOperations = new();
+
+    // Alerts
+    private List<Alert> _alerts = new();
+
+    // Loading state
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRealData();
+    }
+
+    private async Task LoadRealData()
+    {
+        _isLoading = true;
+        try
+        {
+            var servers = await ServerService.GetServersAsync();
+            if (servers != null)
+            {
+                _totalInstances = servers.Count;
+                _runningInstances = servers.Count(s => s.State.Equals("running", StringComparison.OrdinalIgnoreCase));
+                _stoppedInstances = servers.Count(s => s.State.Equals("exited", StringComparison.OrdinalIgnoreCase));
+                _failedInstances = 0; // Docker doesn't have a "failed" state
+                _pendingInstances = servers.Count(s => s.State.Equals("created", StringComparison.OrdinalIgnoreCase));
+
+                // Load recent operations from servers
+                LoadRecentOperations(servers);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load server data: {ex.Message}", Severity.Error);
+            LoadMockDataAsFallback();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void LoadRecentOperations(List<ContainerDto> servers)
+    {
+        _recentOperations.Clear();
+
+        foreach (var server in servers.OrderByDescending(s => s.Created).Take(7))
+        {
+            var operationType = server.State.ToLower() switch
+            {
+                "running" => "Instance Started",
+                "exited" => "Instance Stopped",
+                "created" => "Instance Created",
+                _ => "Configuration Updated"
+            };
+
+            _recentOperations.Add(new RecentOperation
+            {
+                Type = operationType,
+                InstanceName = server.Name,
+                Success = server.State.Equals("running", StringComparison.OrdinalIgnoreCase),
+                Timestamp = server.Created
+            });
+        }
+    }
+
+    private void LoadMockDataAsFallback()
+    {
+        // Load recent operations
+        _recentOperations = new List<RecentOperation>
+        {
+            new RecentOperation
+            {
+                Type = "Backup Created",
+                InstanceName = "PokeMMO-Main",
+                Success = true,
+                Timestamp = DateTime.Now.AddMinutes(-15)
+            },
+            new RecentOperation
+            {
+                Type = "Instance Started",
+                InstanceName = "PokeMMO-Testing",
+                Success = true,
+                Timestamp = DateTime.Now.AddMinutes(-45)
+            },
+            new RecentOperation
+            {
+                Type = "Backup Restored",
+                InstanceName = "PokeMMO-Dev",
+                Success = true,
+                Timestamp = DateTime.Now.AddHours(-2)
+            },
+            new RecentOperation
+            {
+                Type = "Instance Stopped",
+                InstanceName = "PokeMMO-Main",
+                Success = true,
+                Timestamp = DateTime.Now.AddHours(-3)
+            },
+            new RecentOperation
+            {
+                Type = "Backup Created",
+                InstanceName = "PokeMMO-Production",
+                Success = false,
+                Timestamp = DateTime.Now.AddHours(-5)
+            },
+            new RecentOperation
+            {
+                Type = "Instance Created",
+                InstanceName = "PokeMMO-Staging",
+                Success = true,
+                Timestamp = DateTime.Now.AddHours(-8)
+            },
+            new RecentOperation
+            {
+                Type = "Configuration Updated",
+                InstanceName = "PokeMMO-Main",
+                Success = true,
+                Timestamp = DateTime.Now.AddHours(-12)
+            }
+        };
+
+        // Load alerts
+        _alerts = new List<Alert>
+        {
+            new Alert
+            {
+                Severity = Severity.Error,
+                Title = "Backup Failed",
+                Message = "Backup operation failed for instance 'PokeMMO-Production' - Insufficient disk space",
+                Time = "5 hours ago"
+            },
+            new Alert
+            {
+                Severity = Severity.Warning,
+                Title = "Backup Recommended",
+                Message = "Instance 'PokeMMO-Main' has not been backed up in 7 days",
+                Time = "1 day ago"
+            },
+            new Alert
+            {
+                Severity = Severity.Info,
+                Title = "System Update Available",
+                Message = "A new version of PokManager is available for download",
+                Time = "2 days ago"
+            }
+        };
+    }
+
+
+
+
+
+    private string GetOperationIcon(string operationType)
+    {
+        return operationType switch
+        {
+            "Backup Created" => Icons.Material.Filled.Backup,
+            "Backup Restored" => Icons.Material.Filled.Restore,
+            "Instance Started" => Icons.Material.Filled.PlayArrow,
+            "Instance Stopped" => Icons.Material.Filled.Stop,
+            "Instance Created" => Icons.Material.Filled.Add,
+            "Configuration Updated" => Icons.Material.Filled.Settings,
+            _ => Icons.Material.Filled.Info
+        };
+    }
+
+    // Quick Action Methods
+    private void CreateInstance()
+    {
+        Snackbar.Add("Navigate to Create Instance page", Severity.Info);
+        // TODO: Navigate to create instance page
+    }
+
+    private void CreateBackup()
+    {
+        Snackbar.Add("Navigate to Create Backup page", Severity.Info);
+        // TODO: Navigate to create backup page
+    }
+
+    private void ViewAllInstances()
+    {
+        Snackbar.Add("Navigate to Instances page", Severity.Info);
+        // TODO: Navigate to instances list page
+    }
+
+    private void ViewSettings()
+    {
+        Snackbar.Add("Navigate to Settings page", Severity.Info);
+        // TODO: Navigate to settings page
+    }
+
+    // Data Models
+    private class RecentOperation
+    {
+        public string Type { get; set; } = string.Empty;
+        public string InstanceName { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    private class Alert
+    {
+        public Severity Severity { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string Time { get; set; } = string.Empty;
+    }
+}

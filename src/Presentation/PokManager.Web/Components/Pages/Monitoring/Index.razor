@@ -1,0 +1,281 @@
+@page "/monitoring"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using MudBlazor
+@inject InstanceDataCache InstanceDataCache
+@inject InstanceService InstanceService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Monitoring - PokManager</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">System Monitoring</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="RefreshDataAsync">
+                Refresh
+            </MudButton>
+            <MudChip T="string" Icon="@Icons.Material.Filled.Timer" Color="Color.Info" Size="Size.Medium">
+                Auto-refresh: @_refreshInterval seconds
+            </MudChip>
+        </MudStack>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (!_instances.Any())
+    {
+        <MudAlert Severity="Severity.Info">
+            No instances found. Create an instance to start monitoring.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            <!-- Summary Cards -->
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Dns" Color="Color.Primary" Size="Size.Large" />
+                            <MudText Typo="Typo.h3">@_instances.Count</MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Total Instances</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" Size="Size.Large" />
+                            <MudText Typo="Typo.h3">@_instances.Count(i => i.Status == InstanceStatus.Running)</MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Running</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Info" Size="Size.Large" />
+                            <MudText Typo="Typo.h3">@_totalPlayers</MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Total Players</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Memory" Color="Color.Warning" Size="Size.Large" />
+                            <MudText Typo="Typo.h3">@_avgCpuUsage.ToString("F1")%</MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Avg CPU Usage</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Instance Cards -->
+            @foreach (var instance in _instances.OrderBy(i => i.Name))
+            {
+                <MudItem xs="12" md="6" lg="4">
+                    <MudCard Elevation="2" Class="@(instance.Status == InstanceStatus.Running ? "instance-card-running" : "")">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.h6">@instance.Name</MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(instance.Status)">
+                                        @instance.Status
+                                    </MudChip>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <!-- Server Info -->
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2" Color="Color.Default">Map:</MudText>
+                                    <MudText Typo="Typo.body2">@instance.ServerMap</MudText>
+                                </MudStack>
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2" Color="Color.Default">Players:</MudText>
+                                    <MudText Typo="Typo.body2">@instance.CurrentPlayers / @instance.MaxPlayers</MudText>
+                                </MudStack>
+
+                                @if (instance.Status == InstanceStatus.Running)
+                                {
+                                    <MudDivider Class="my-2" />
+
+                                    <!-- CPU Usage -->
+                                    <div>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                            <MudText Typo="Typo.body2"><strong>CPU:</strong></MudText>
+                                            <MudText Typo="Typo.body2">@instance.CpuUsagePercent.ToString("F1")%</MudText>
+                                        </MudStack>
+                                        <MudProgressLinear Color="@GetCpuColor(instance.CpuUsagePercent)" Value="@instance.CpuUsagePercent" Size="Size.Small" />
+                                    </div>
+
+                                    <!-- Memory Usage -->
+                                    <div>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                            <MudText Typo="Typo.body2"><strong>Memory:</strong></MudText>
+                                            <MudText Typo="Typo.body2">@instance.MemoryUsageMB MB</MudText>
+                                        </MudStack>
+                                        <MudProgressLinear Color="@GetMemoryColor(instance.MemoryUsageMB)" Value="@((instance.MemoryUsageMB / 8192.0) * 100)" Size="Size.Small" />
+                                    </div>
+
+                                    <!-- Health Status -->
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.body2" Color="Color.Default">Health:</MudText>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@GetHealthIcon(instance.Health)" Color="@GetHealthColor(instance.Health)" Size="Size.Small" />
+                                            <MudText Typo="Typo.body2">@instance.Health</MudText>
+                                        </MudStack>
+                                    </MudStack>
+
+                                    <!-- Uptime -->
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.body2" Color="Color.Default">Uptime:</MudText>
+                                        <MudText Typo="Typo.body2">@instance.Uptime</MudText>
+                                    </MudStack>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="@(() => NavigateToInstance(instance.Id))">
+                                View Details
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    private List<InstanceViewModel> _instances = new();
+    private bool _loading = true;
+    private int _refreshInterval = 30;
+    private System.Threading.Timer? _timer;
+    private int _totalPlayers;
+    private double _avgCpuUsage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+
+        // Set up auto-refresh every 30 seconds
+        _timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadDataAsync();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(_refreshInterval), TimeSpan.FromSeconds(_refreshInterval));
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+
+        try
+        {
+            var result = await InstanceService.GetAllInstancesAsync();
+
+            if (result.IsSuccess && result.Value != null)
+            {
+                _instances = result.Value;
+
+                // Calculate summary metrics
+                _totalPlayers = _instances.Sum(i => i.CurrentPlayers);
+                _avgCpuUsage = _instances.Any()
+                    ? _instances.Average(i => i.CpuUsagePercent)
+                    : 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading monitoring data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private void NavigateToInstance(string instanceId)
+    {
+        NavigationManager.NavigateTo($"/instances/{instanceId}");
+    }
+
+    private Color GetStatusColor(InstanceStatus status) => status switch
+    {
+        InstanceStatus.Running => Color.Success,
+        InstanceStatus.Starting => Color.Info,
+        InstanceStatus.Stopping => Color.Warning,
+        InstanceStatus.Stopped => Color.Default,
+        InstanceStatus.Error => Color.Error,
+        _ => Color.Default
+    };
+
+    private Color GetCpuColor(double usage)
+    {
+        if (usage < 50) return Color.Success;
+        if (usage < 75) return Color.Warning;
+        return Color.Error;
+    }
+
+    private Color GetMemoryColor(long memoryMB)
+    {
+        if (memoryMB < 4096) return Color.Success;
+        if (memoryMB < 6144) return Color.Warning;
+        return Color.Error;
+    }
+
+    private Color GetHealthColor(InstanceHealth health) => health switch
+    {
+        InstanceHealth.Healthy => Color.Success,
+        InstanceHealth.Degraded => Color.Warning,
+        InstanceHealth.Unhealthy => Color.Error,
+        InstanceHealth.Unknown => Color.Default,
+        _ => Color.Default
+    };
+
+    private string GetHealthIcon(InstanceHealth health) => health switch
+    {
+        InstanceHealth.Healthy => Icons.Material.Filled.CheckCircle,
+        InstanceHealth.Degraded => Icons.Material.Filled.Warning,
+        InstanceHealth.Unhealthy => Icons.Material.Filled.Error,
+        InstanceHealth.Unknown => Icons.Material.Filled.Help,
+        _ => Icons.Material.Filled.Help
+    };
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

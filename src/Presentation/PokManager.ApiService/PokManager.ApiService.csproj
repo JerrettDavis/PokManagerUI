@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Hosting\PokManager.ServiceDefaults\PokManager.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\Core\PokManager.Application\PokManager.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\PokManager.Infrastructure\PokManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\PokManager.Infrastructure.Docker\PokManager.Infrastructure.Docker.csproj" />
+    <ProjectReference Include="..\PokManager.Web\PokManager.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+  </ItemGroup>
+
+</Project>

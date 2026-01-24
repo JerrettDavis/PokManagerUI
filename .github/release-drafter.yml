@@ -1,0 +1,214 @@
+# Release Drafter Configuration for PokManagerApi
+# Automatically generates release notes from pull requests
+
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+# Categories for organizing changes in release notes
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+
+  - title: '🔒 Security'
+    labels:
+      - 'security'
+
+  - title: '⚡ Performance'
+    labels:
+      - 'performance'
+
+  - title: '💥 Breaking Changes'
+    labels:
+      - 'breaking-change'
+
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+
+  - title: '🔧 Maintenance'
+    labels:
+      - 'refactoring'
+      - 'area: build'
+      - 'area: tests'
+
+  - title: '📦 Dependencies'
+    labels:
+      - 'dependencies'
+      - 'nuget'
+      - 'github-actions'
+
+# Exclude certain labels from release notes
+exclude-labels:
+  - 'skip-changelog'
+  - 'invalid'
+  - 'duplicate'
+  - 'wontfix'
+
+# Change template for each pull request
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+
+# Template for the full release notes
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## 📊 Statistics
+
+  **Contributors:** $CONTRIBUTORS
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+# Auto labeling based on PR title and branch name
+autolabeler:
+  # Feature labels
+  - label: 'feature'
+    branch:
+      - '/^feat(ure)?[/-].+/'
+    title:
+      - '/^feat(\(.+\))?:/'
+      - '/^feature(\(.+\))?:/'
+
+  # Bug labels
+  - label: 'bug'
+    branch:
+      - '/^fix[/-].+/'
+      - '/^bugfix[/-].+/'
+      - '/^hotfix[/-].+/'
+    title:
+      - '/^fix(\(.+\))?:/'
+      - '/^bugfix(\(.+\))?:/'
+
+  # Documentation labels
+  - label: 'documentation'
+    branch:
+      - '/^docs?[/-].+/'
+    title:
+      - '/^docs?(\(.+\))?:/'
+    files:
+      - '**/*.md'
+      - 'docs/**/*'
+
+  # Refactoring labels
+  - label: 'refactoring'
+    branch:
+      - '/^refactor[/-].+/'
+    title:
+      - '/^refactor(\(.+\))?:/'
+
+  # Performance labels
+  - label: 'performance'
+    branch:
+      - '/^perf[/-].+/'
+    title:
+      - '/^perf(\(.+\))?:/'
+
+  # Build/CI labels
+  - label: 'area: build'
+    branch:
+      - '/^build[/-].+/'
+      - '/^ci[/-].+/'
+    title:
+      - '/^build(\(.+\))?:/'
+      - '/^ci(\(.+\))?:/'
+    files:
+      - '.github/**/*'
+      - '**/*.csproj'
+      - '**/Directory.Build.props'
+      - '**/Directory.Packages.props'
+
+  # Test labels
+  - label: 'area: tests'
+    branch:
+      - '/^test[/-].+/'
+    title:
+      - '/^test(\(.+\))?:/'
+    files:
+      - 'tests/**/*'
+      - '**/*.Tests/**/*'
+
+  # Breaking change detection
+  - label: 'breaking-change'
+    title:
+      - '/^.*BREAKING CHANGE.*/'
+      - '/!:/'
+    body:
+      - '/BREAKING CHANGE:/'
+
+  # Domain layer
+  - label: 'area: domain'
+    files:
+      - 'src/Core/PokManager.Domain/**/*'
+
+  # Application layer
+  - label: 'area: application'
+    files:
+      - 'src/Core/PokManager.Application/**/*'
+
+  # Infrastructure layer
+  - label: 'area: infrastructure'
+    files:
+      - 'src/Infrastructure/**/*'
+
+  # Presentation layer
+  - label: 'area: presentation'
+    files:
+      - 'src/Presentation/**/*'
+
+  # Hosting layer
+  - label: 'area: hosting'
+    files:
+      - 'src/Hosting/**/*'
+
+  # Docker
+  - label: 'area: docker'
+    files:
+      - '**/Dockerfile'
+      - '**/docker-compose*.yml'
+      - '**/.dockerignore'
+
+  # Dependencies
+  - label: 'dependencies'
+    branch:
+      - '/^dependabot\//'
+    title:
+      - '/^chore\(deps\):/'
+      - '/^build\(deps\):/'
+
+# Version resolution strategy
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'bug'
+      - 'security'
+      - 'dependencies'
+      - 'documentation'
+      - 'refactoring'
+      - 'performance'
+  default: patch
+
+# Replacers for cleaning up text
+replacers:
+  # Remove conventional commit prefixes from titles for cleaner release notes
+  - search: '/^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?:\s*/i'
+    replace: ''
+
+  # Format breaking changes
+  - search: '/BREAKING CHANGE:/g'
+    replace: '⚠️ BREAKING CHANGE:'

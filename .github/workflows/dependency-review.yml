@@ -1,0 +1,219 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  dependency-review:
+    name: Review Dependency Changes
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        fail-on-scopes: runtime
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+        deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0
+        comment-summary-in-pr: always
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install dotnet-project-licenses
+      run: dotnet tool install --global dotnet-project-licenses
+
+    - name: Restore dependencies
+      run: dotnet restore PokManager.sln
+
+    - name: Generate license report
+      run: |
+        dotnet-project-licenses --input PokManager.sln --output-directory ./licenses --export-license-texts --json
+
+        echo "## License Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "License report generated. Review licenses directory for details." >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload license report
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-report
+        path: licenses/
+        retention-days: 30
+
+  vulnerability-check:
+    name: Vulnerability Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore PokManager.sln
+
+    - name: Check for vulnerable packages
+      run: |
+        echo "## Vulnerability Check Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        dotnet list package --vulnerable --include-transitive > vulnerable-check.txt 2>&1 || true
+
+        if grep -q "has the following vulnerable packages" vulnerable-check.txt; then
+          echo "::error::Vulnerable packages detected!"
+          echo "### Vulnerable Packages Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat vulnerable-check.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "### No Vulnerable Packages Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All dependencies are secure." >> $GITHUB_STEP_SUMMARY
+          echo "No vulnerable packages found."
+        fi
+
+    - name: Check for deprecated packages
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Deprecated Packages Check" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        dotnet list package --deprecated > deprecated-check.txt 2>&1 || true
+
+        if grep -q "has the following deprecated packages" deprecated-check.txt; then
+          echo "::warning::Deprecated packages detected!"
+          echo "### Deprecated Packages Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat deprecated-check.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### No Deprecated Packages Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All dependencies are current." >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload vulnerability report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: vulnerability-check-report
+        path: |
+          vulnerable-check.txt
+          deprecated-check.txt
+        retention-days: 30
+
+  dependency-diff:
+    name: Dependency Diff Report
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code (HEAD)
+      uses: actions/checkout@v4
+      with:
+        path: head
+
+    - name: Checkout code (Base)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.base_ref }}
+        path: base
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Generate dependency lists
+      run: |
+        cd head
+        dotnet restore PokManager.sln
+        dotnet list package --include-transitive > ../head-packages.txt
+        cd ../base
+        dotnet restore PokManager.sln
+        dotnet list package --include-transitive > ../base-packages.txt
+        cd ..
+
+    - name: Compare dependencies
+      run: |
+        echo "## Dependency Changes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if diff -u base-packages.txt head-packages.txt > package-diff.txt; then
+          echo "No changes to dependencies." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### Changed Dependencies:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```diff' >> $GITHUB_STEP_SUMMARY
+          cat package-diff.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload dependency diff
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-diff-report
+        path: |
+          base-packages.txt
+          head-packages.txt
+          package-diff.txt
+        retention-days: 30
+
+  dependency-review-summary:
+    name: Review Summary
+    needs: [dependency-review, license-check, vulnerability-check, dependency-diff]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Check all jobs status
+      run: |
+        echo "## Dependency Review Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Dependency Review: ${{ needs.dependency-review.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- License Check: ${{ needs.license-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Vulnerability Check: ${{ needs.vulnerability-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Dependency Diff: ${{ needs.dependency-diff.result }}" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ needs.dependency-review.result }}" == "success" ] && \
+           [ "${{ needs.license-check.result }}" == "success" ] && \
+           [ "${{ needs.vulnerability-check.result }}" == "success" ] && \
+           [ "${{ needs.dependency-diff.result }}" == "success" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### All dependency review checks passed!" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Some dependency review checks failed!" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi

@@ -1,0 +1,309 @@
+@page "/instances/create"
+@using PokManager.Web.Models
+@using MudBlazor
+@using System.ComponentModel.DataAnnotations
+@rendermode InteractiveServer
+
+<PageTitle>Create Instance - PokManager</PageTitle>
+
+<MudStack Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       Href="/instances"
+                       Color="Color.Primary" />
+        <MudText Typo="Typo.h4">Create New Instance</MudText>
+    </MudStack>
+
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudForm @ref="_form" @bind-IsValid="_isFormValid" @bind-Errors="_errors">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_model.InstanceId"
+                                  Label="Instance ID"
+                                  Required="true"
+                                  RequiredError="Instance ID is required"
+                                  HelperText="Unique identifier for this instance"
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_model.InstanceName"
+                                  Label="Instance Name"
+                                  Required="true"
+                                  RequiredError="Instance name is required"
+                                  HelperText="Friendly display name"
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSelect @bind-Value="_model.ServerMap"
+                               Label="Server Map"
+                               Required="true"
+                               RequiredError="Server map is required"
+                               Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("Island")">Island</MudSelectItem>
+                        <MudSelectItem Value="@("Sakurajima")">Sakurajima</MudSelectItem>
+                        <MudSelectItem Value="@("Desert")">Desert</MudSelectItem>
+                        <MudSelectItem Value="@("Forest")">Forest</MudSelectItem>
+                        <MudSelectItem Value="@("Volcano")">Volcano</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudNumericField @bind-Value="_model.MaxPlayers"
+                                     Label="Max Players"
+                                     Min="1"
+                                     Max="100"
+                                     Required="true"
+                                     Variant="Variant.Outlined"
+                                     HelperText="Maximum number of concurrent players" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudNumericField @bind-Value="_model.Port"
+                                     Label="Server Port"
+                                     Min="1024"
+                                     Max="65535"
+                                     Required="true"
+                                     Variant="Variant.Outlined"
+                                     HelperText="Port number for the server" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_model.ServerPassword"
+                                  Label="Server Password"
+                                  InputType="InputType.Password"
+                                  Variant="Variant.Outlined"
+                                  HelperText="Optional password for server access" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSwitch @bind-Value="_model.IsPublic"
+                               Label="Public Server"
+                               Color="Color.Primary"
+                               Class="mt-2">
+                        <MudText Typo="Typo.body2" Class="ml-2">
+                            @(_model.IsPublic ? "Server will be visible in public listings" : "Server will be private")
+                        </MudText>
+                    </MudSwitch>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSwitch @bind-Value="_model.IsPvE"
+                               Label="PvE Mode"
+                               Color="Color.Primary"
+                               Class="mt-2">
+                        <MudText Typo="Typo.body2" Class="ml-2">
+                            @(_model.IsPvE ? "Player vs Environment (PvE)" : "Player vs Player (PvP)")
+                        </MudText>
+                    </MudSwitch>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="mb-2">Mods</MudText>
+                    <MudStack Spacing="2">
+                        @foreach (var mod in _model.Mods)
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudTextField @bind-Value="@mod.Name"
+                                              Label="Mod Name"
+                                              Variant="Variant.Outlined"
+                                              Style="flex: 1;" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               OnClick="() => RemoveMod(mod)" />
+                            </MudStack>
+                        }
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="AddMod"
+                                   Style="max-width: 200px;">
+                            Add Mod
+                        </MudButton>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider Class="my-4" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="mb-2">Advanced Settings</MudText>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudNumericField @bind-Value="_model.AutoSaveIntervalMinutes"
+                                     Label="Auto-Save Interval (minutes)"
+                                     Min="1"
+                                     Max="60"
+                                     Variant="Variant.Outlined"
+                                     HelperText="How often to automatically save the game" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudNumericField @bind-Value="_model.BackupRetentionDays"
+                                     Label="Backup Retention (days)"
+                                     Min="1"
+                                     Max="365"
+                                     Variant="Variant.Outlined"
+                                     HelperText="How long to keep backup files" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSwitch @bind-Value="_model.EnableAutoBackup"
+                               Label="Enable Automatic Backups"
+                               Color="Color.Primary" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSwitch @bind-Value="_model.EnableAutoUpdate"
+                               Label="Enable Automatic Updates"
+                               Color="Color.Primary" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider Class="my-4" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   Href="/instances">
+                            Cancel
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="CreateInstanceAsync"
+                                   Disabled="@(!_isFormValid || _isCreating)"
+                                   StartIcon="@Icons.Material.Filled.Add">
+                            @(_isCreating ? "Creating..." : "Create Instance")
+                        </MudButton>
+                    </MudStack>
+                </MudItem>
+
+                @if (_errors.Length > 0)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Error">
+                            <MudText Typo="Typo.body2">Please fix the following errors:</MudText>
+                            <MudList T="string" Dense="true">
+                                @foreach (var error in _errors)
+                                {
+                                    <MudListItem T="string">@error</MudListItem>
+                                }
+                            </MudList>
+                        </MudAlert>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </MudPaper>
+</MudStack>
+
+@code {
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    private MudForm _form = default!;
+    private bool _isFormValid;
+    private string[] _errors = Array.Empty<string>();
+    private bool _isCreating = false;
+
+    private CreateInstanceModel _model = new()
+    {
+        MaxPlayers = 32,
+        Port = 8211,
+        IsPublic = true,
+        IsPvE = true,
+        AutoSaveIntervalMinutes = 15,
+        BackupRetentionDays = 7,
+        EnableAutoBackup = true,
+        EnableAutoUpdate = false,
+        Mods = new List<ModItem>()
+    };
+
+    private void AddMod()
+    {
+        _model.Mods.Add(new ModItem { Name = "" });
+    }
+
+    private void RemoveMod(ModItem mod)
+    {
+        _model.Mods.Remove(mod);
+    }
+
+    private async Task CreateInstanceAsync()
+    {
+        await _form.Validate();
+
+        if (!_isFormValid)
+        {
+            Snackbar.Add("Please fix the form errors before submitting.", Severity.Error);
+            return;
+        }
+
+        _isCreating = true;
+
+        try
+        {
+            // Simulate API call
+            await Task.Delay(2000);
+
+            Snackbar.Add($"Instance '{_model.InstanceName}' created successfully!", Severity.Success);
+
+            // Navigate to the instances list
+            NavigationManager.NavigateTo("/instances");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating instance: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCreating = false;
+        }
+    }
+
+    public class CreateInstanceModel
+    {
+        [Required(ErrorMessage = "Instance ID is required")]
+        public string InstanceId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Instance name is required")]
+        public string InstanceName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Server map is required")]
+        public string ServerMap { get; set; } = string.Empty;
+
+        [Range(1, 100, ErrorMessage = "Max players must be between 1 and 100")]
+        public int MaxPlayers { get; set; }
+
+        [Range(1024, 65535, ErrorMessage = "Port must be between 1024 and 65535")]
+        public int Port { get; set; }
+
+        public string ServerPassword { get; set; } = string.Empty;
+
+        public bool IsPublic { get; set; }
+
+        public bool IsPvE { get; set; }
+
+        public List<ModItem> Mods { get; set; } = new();
+
+        [Range(1, 60, ErrorMessage = "Auto-save interval must be between 1 and 60 minutes")]
+        public int AutoSaveIntervalMinutes { get; set; }
+
+        [Range(1, 365, ErrorMessage = "Backup retention must be between 1 and 365 days")]
+        public int BackupRetentionDays { get; set; }
+
+        public bool EnableAutoBackup { get; set; }
+
+        public bool EnableAutoUpdate { get; set; }
+    }
+
+    public class ModItem
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+}

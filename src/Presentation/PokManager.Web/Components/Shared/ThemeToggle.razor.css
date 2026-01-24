@@ -1,0 +1,17 @@
+::deep .theme-toggle-button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+::deep .theme-toggle-button:hover {
+    transform: rotate(180deg);
+    opacity: 0.9;
+}
+
+::deep .theme-toggle-button:active {
+    transform: rotate(180deg) scale(0.95);
+}
+
+::deep .theme-toggle-button svg {
+    transition: opacity 0.2s ease-in-out;
+}

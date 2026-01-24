@@ -1,0 +1,176 @@
+@using MudBlazor
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject BackupApiClient BackupClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-3">Upload Backup File</MudText>
+
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            <MudText Typo="Typo.body2">
+                Upload a compressed backup file (.gz, .tar.gz, or .zip) to restore it to a server instance.
+                The backup will be stored and can be restored later.
+            </MudText>
+        </MudAlert>
+
+        <MudStack Spacing="3">
+            <MudSelect @bind-Value="_selectedInstanceId"
+                       Label="Select Instance"
+                       Required="true"
+                       Variant="Variant.Outlined">
+                <MudSelectItem Value="@("")">-- Select an Instance --</MudSelectItem>
+                @foreach (var instance in Instances)
+                {
+                    <MudSelectItem Value="@instance.Id">@instance.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_description"
+                          Label="Description (Optional)"
+                          Variant="Variant.Outlined"
+                          Lines="2" />
+
+            <MudFileUpload T="IBrowserFile"
+                           FilesChanged="OnFileSelected"
+                           Accept=".gz,.tar.gz,.zip">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               Disabled="_uploading">
+                        @(_file != null ? _file.Name : "Select Backup File")
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @if (_file != null)
+            {
+                <MudPaper Outlined="true" Class="pa-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2">@_file.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            @FormatFileSize(_file.Size)
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (_uploading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-text-secondary">
+                    Uploading backup... Please wait.
+                </MudText>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error">
+                    @_errorMessage
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_uploading">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="ConfirmUpload"
+                   Disabled="@(_uploading || _file == null || string.IsNullOrWhiteSpace(_selectedInstanceId))">
+            @(_uploading ? "Uploading..." : "Upload Backup")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IDialogReference MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public List<InstanceViewModel> Instances { get; set; } = new();
+
+    private string _selectedInstanceId = string.Empty;
+    private string _description = string.Empty;
+    private IBrowserFile? _file = null;
+    private bool _uploading = false;
+    private string _errorMessage = string.Empty;
+
+    private void OnFileSelected(IBrowserFile file)
+    {
+        _file = file;
+        _errorMessage = string.Empty;
+
+        // Validate file extension
+        var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (extension != ".gz" && extension != ".zip" && !file.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase))
+        {
+            _errorMessage = "Invalid file type. Please upload a .gz, .tar.gz, or .zip file.";
+            _file = null;
+        }
+
+        // Validate file size (max 1GB for safety)
+        if (file.Size > 1024 * 1024 * 1024)
+        {
+            _errorMessage = "File is too large. Maximum size is 1GB.";
+            _file = null;
+        }
+    }
+
+    private async Task ConfirmUpload()
+    {
+        if (_file == null || string.IsNullOrWhiteSpace(_selectedInstanceId))
+        {
+            _errorMessage = "Please select both an instance and a backup file.";
+            return;
+        }
+
+        _uploading = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            using var stream = _file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 1024); // 1GB max
+            var result = await BackupClient.UploadBackupAsync(
+                _selectedInstanceId,
+                stream,
+                _file.Name,
+                _description
+            );
+
+            Snackbar.Add($"Backup uploaded successfully: {result.BackupId}", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Snackbar.Add($"Error uploading backup: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

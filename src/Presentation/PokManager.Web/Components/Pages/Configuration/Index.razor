@@ -1,0 +1,127 @@
+@page "/configuration"
+@using PokManager.Web.Services
+@using PokManager.Web.Models
+@using MudBlazor
+@inject InstanceService InstanceService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Game Configuration - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Game Configuration</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.body1" Class="mb-2">
+        Manage game settings for your Palworld servers including difficulty, rates, multipliers, and game rules.
+    </MudText>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+else if (_instanceViewModels.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        No server instances found. Please create an instance first.
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2">
+        <MudTable Items="@_instanceViewModels" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Instance Name</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Map</MudTh>
+                <MudTh>Players</MudTh>
+                <MudTh Style="text-align: right;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudText Typo="Typo.body2"><strong>@context.Name</strong></MudText>
+                    @if (!string.IsNullOrEmpty(context.SessionName) && context.SessionName != context.Name)
+                    {
+                        <br />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.SessionName</MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled">
+                        @context.Status
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Map">@context.ServerMap</MudTd>
+                <MudTd DataLabel="Players">@context.CurrentPlayers / @context.MaxPlayers</MudTd>
+                <MudTd DataLabel="Actions" Style="text-align: right;">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Settings"
+                               Href="@($"/configuration/{context.Id}")">
+                        Configure
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    private bool _loading = true;
+    private string? _error;
+    private List<InstanceViewModel> _instanceViewModels = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstancesAsync();
+    }
+
+    private async Task LoadInstancesAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var result = await InstanceService.GetAllInstancesAsync();
+
+            if (result.IsSuccess)
+            {
+                _instanceViewModels = result.Value;
+            }
+            else
+            {
+                _error = $"Failed to load instances: {result.Error}";
+                Snackbar.Add(_error, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"An error occurred: {ex.Message}";
+            Snackbar.Add(_error, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color GetStatusColor(InstanceStatus status)
+    {
+        return status switch
+        {
+            InstanceStatus.Running => Color.Success,
+            InstanceStatus.Stopped => Color.Default,
+            InstanceStatus.Starting => Color.Info,
+            InstanceStatus.Stopping => Color.Warning,
+            InstanceStatus.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

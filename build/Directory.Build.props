@@ -1,0 +1,6 @@
+<Project>
+  <!-- This file ensures the build project doesn't inherit properties from the main solution -->
+  <PropertyGroup>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+  </PropertyGroup>
+</Project>

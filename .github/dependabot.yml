@@ -1,0 +1,94 @@
+# Dependabot configuration for PokManagerApi
+# Manages automated dependency updates for NuGet packages and GitHub Actions
+
+version: 2
+updates:
+  # NuGet packages - Daily updates
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "area: build"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    reviewers:
+      - "PokManagerApi/maintainers"
+    assignees:
+      - "PokManagerApi/maintainers"
+    # Group related packages together
+    groups:
+      # .NET Aspire packages
+      aspire:
+        patterns:
+          - "Aspire.*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Testing frameworks
+      testing:
+        patterns:
+          - "xunit*"
+          - "FluentAssertions*"
+          - "NSubstitute*"
+          - "TinyBDD*"
+          - "coverlet.*"
+          - "Microsoft.NET.Test.Sdk"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Microsoft ASP.NET Core packages
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Entity Framework Core packages
+      efcore:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+          - "Npgsql.EntityFrameworkCore.*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Logging and diagnostics
+      logging:
+        patterns:
+          - "Serilog*"
+          - "Microsoft.Extensions.Logging*"
+          - "OpenTelemetry*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions - Weekly updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "area: build"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    reviewers:
+      - "PokManagerApi/maintainers"
+    assignees:
+      - "PokManagerApi/maintainers"

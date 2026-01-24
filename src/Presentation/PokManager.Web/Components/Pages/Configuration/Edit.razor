@@ -1,0 +1,390 @@
+@page "/configuration/{InstanceId}"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using PokManager.Application.Configuration
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Rendering
+@inject ConfigurationService ConfigurationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Configuration - @InstanceId - PokManager</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2">Configure @InstanceId</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Manage ARK: Survival Ascended server settings including rates, multipliers, and game rules.
+</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-4" />
+}
+else if (_error != null)
+{
+    <MudAlert Severity="Severity.Error" Class="my-4">@_error</MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="mb-4">
+        <MudToolBar>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="SaveConfiguration"
+                       Disabled="_saving">
+                @if (_saving)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save Changes</span>
+                }
+            </MudButton>
+            <MudSpacer />
+            <MudSwitch @bind-Value="_restartOnSave"
+                       Label="Restart server after saving"
+                       Color="Color.Warning"
+                       Class="mr-2" />
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Cancel"
+                       OnClick="CancelChanges"
+                       Disabled="_saving">
+                Cancel
+            </MudButton>
+        </MudToolBar>
+    </MudPaper>
+
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+        <MudTabPanel Text="Server Information" Icon="@Icons.Material.Filled.Info">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Server Information")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Rates & Multipliers" Icon="@Icons.Material.Filled.Speed">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Rates & Multipliers")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Difficulty" Icon="@Icons.Material.Filled.TrendingUp">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Difficulty")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Player Stats" Icon="@Icons.Material.Filled.Person">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Player Stats")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Dino Stats" Icon="@Icons.Material.Filled.Pets">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Dino Stats")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Taming & Breeding" Icon="@Icons.Material.Filled.FavoriteBorder">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Taming & Breeding")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.Inventory">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Resources")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Server Rules" Icon="@Icons.Material.Filled.Gavel">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Server Rules")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Limits" Icon="@Icons.Material.Filled.Policy">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Limits")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Time & Day Cycle" Icon="@Icons.Material.Filled.WbSunny">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Time & Day Cycle")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Performance" Icon="@Icons.Material.Filled.Speed">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Performance")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Tribe Settings" Icon="@Icons.Material.Filled.Groups">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Tribe Settings")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Advanced" Icon="@Icons.Material.Filled.Code">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    @RenderSettingsForCategory("Advanced")
+                </MudGrid>
+            </MudPaper>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    [Parameter]
+    public string InstanceId { get; set; } = string.Empty;
+
+    private bool _loading = true;
+    private bool _saving = false;
+    private bool _restartOnSave = false;
+    private string? _error;
+
+    private Dictionary<string, string> _settings = new();
+    private Dictionary<string, ArkConfigurationDefaults.ArkConfigSetting> _arkDefaults = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _arkDefaults = ArkConfigurationDefaults.GetDefaults();
+        await LoadConfigurationAsync();
+    }
+
+    private async Task LoadConfigurationAsync()
+    {
+        _loading = true;
+        _error = null;
+
+        try
+        {
+            var result = await ConfigurationService.GetConfigurationAsync(InstanceId, includeSecrets: true);
+
+            if (result.IsSuccess)
+            {
+                _settings = result.Value.Settings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            }
+            else
+            {
+                _error = $"Failed to load configuration: {result.Error}";
+                Snackbar.Add(_error, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"An error occurred: {ex.Message}";
+            Snackbar.Add(_error, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private RenderFragment RenderSettingsForCategory(string category)
+    {
+        return builder =>
+        {
+            var categorySettings = _arkDefaults
+                .Where(kvp => kvp.Value.Category == category)
+                .OrderBy(kvp => kvp.Key);
+
+            foreach (var setting in categorySettings)
+            {
+                var key = setting.Key;
+                var config = setting.Value;
+                var currentValue = _settings.ContainsKey(key) ? _settings[key] : config.DefaultValue;
+
+                builder.OpenComponent<MudItem>(0);
+                builder.AddAttribute(1, "xs", 12);
+                builder.AddAttribute(2, "md", 6);
+                builder.AddAttribute(3, "ChildContent", (RenderFragment)(childBuilder =>
+                {
+                    RenderSettingControl(childBuilder, key, config, currentValue);
+                }));
+                builder.CloseComponent();
+            }
+        };
+    }
+
+    private void RenderSettingControl(RenderTreeBuilder builder, string key, ArkConfigurationDefaults.ArkConfigSetting config, string currentValue)
+    {
+        // Determine control type based on setting name and value
+        if (key.StartsWith("b") || key.Contains("Enable") || key.Contains("Disable") || key.Contains("Allow") ||
+            currentValue.Equals("True", StringComparison.OrdinalIgnoreCase) || currentValue.Equals("False", StringComparison.OrdinalIgnoreCase))
+        {
+            // Boolean switch
+            builder.OpenComponent<MudSwitch<bool>>(0);
+            builder.AddAttribute(1, "Label", FormatSettingName(key));
+            builder.AddAttribute(2, "Value", bool.TryParse(currentValue, out var boolVal) && boolVal);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<bool>(this, val =>
+            {
+                _settings[key] = val.ToString();
+                StateHasChanged();
+            }));
+            builder.AddAttribute(4, "Color", Color.Primary);
+            builder.AddAttribute(5, "Class", "mb-3");
+            builder.CloseComponent();
+
+            if (!string.IsNullOrEmpty(config.Description))
+            {
+                builder.OpenComponent<MudText>(0);
+                builder.AddAttribute(1, "Typo", Typo.caption);
+                builder.AddAttribute(2, "Color", Color.Secondary);
+                builder.AddAttribute(3, "Class", "mb-3");
+                builder.AddAttribute(4, "ChildContent", (RenderFragment)(b => b.AddContent(0, config.Description)));
+                builder.CloseComponent();
+            }
+        }
+        else if (key.Contains("Multiplier") || key.Contains("Rate") || key.Contains("Speed") || key.Contains("Scale"))
+        {
+            // Numeric field for multipliers
+            builder.OpenComponent<MudNumericField<double>>(0);
+            builder.AddAttribute(1, "Label", FormatSettingName(key));
+            builder.AddAttribute(2, "Value", double.TryParse(currentValue, out var doubleVal) ? doubleVal : 1.0);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<double>(this, val =>
+            {
+                _settings[key] = val.ToString("F2");
+                StateHasChanged();
+            }));
+            builder.AddAttribute(4, "Variant", Variant.Outlined);
+            builder.AddAttribute(5, "Min", 0.1);
+            builder.AddAttribute(6, "Max", 100.0);
+            builder.AddAttribute(7, "Step", 0.1);
+            builder.AddAttribute(8, "Format", "F2");
+            builder.AddAttribute(9, "HelperText", config.Description);
+            builder.AddAttribute(10, "Class", "mb-3");
+            builder.CloseComponent();
+        }
+        else if (key.Contains("Max") || key.Contains("Num") || key.Contains("Limit") || key.Contains("Port") || key.Contains("Minutes"))
+        {
+            // Integer field
+            builder.OpenComponent<MudNumericField<int>>(0);
+            builder.AddAttribute(1, "Label", FormatSettingName(key));
+            builder.AddAttribute(2, "Value", int.TryParse(currentValue, out var intVal) ? intVal : 0);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<int>(this, val =>
+            {
+                _settings[key] = val.ToString();
+                StateHasChanged();
+            }));
+            builder.AddAttribute(4, "Variant", Variant.Outlined);
+            builder.AddAttribute(5, "Min", 0);
+            builder.AddAttribute(6, "HelperText", config.Description);
+            builder.AddAttribute(7, "Class", "mb-3");
+            builder.CloseComponent();
+        }
+        else if (key.Contains("Password"))
+        {
+            // Password field
+            builder.OpenComponent<MudTextField<string>>(0);
+            builder.AddAttribute(1, "Label", FormatSettingName(key));
+            builder.AddAttribute(2, "Value", currentValue);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string>(this, val =>
+            {
+                _settings[key] = val ?? string.Empty;
+                StateHasChanged();
+            }));
+            builder.AddAttribute(4, "Variant", Variant.Outlined);
+            builder.AddAttribute(5, "InputType", InputType.Password);
+            builder.AddAttribute(6, "HelperText", config.Description);
+            builder.AddAttribute(7, "Class", "mb-3");
+            builder.CloseComponent();
+        }
+        else
+        {
+            // Text field for everything else
+            builder.OpenComponent<MudTextField<string>>(0);
+            builder.AddAttribute(1, "Label", FormatSettingName(key));
+            builder.AddAttribute(2, "Value", currentValue);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string>(this, val =>
+            {
+                _settings[key] = val ?? string.Empty;
+                StateHasChanged();
+            }));
+            builder.AddAttribute(4, "Variant", Variant.Outlined);
+            builder.AddAttribute(5, "HelperText", config.Description);
+            builder.AddAttribute(6, "Class", "mb-3");
+            builder.CloseComponent();
+        }
+    }
+
+    private string FormatSettingName(string key)
+    {
+        // Convert PascalCase to space-separated words
+        var result = System.Text.RegularExpressions.Regex.Replace(key, "([A-Z])", " $1").Trim();
+        return result;
+    }
+
+    private async Task SaveConfiguration()
+    {
+        _saving = true;
+
+        try
+        {
+            var result = await ConfigurationService.ApplyConfigurationAsync(
+                InstanceId,
+                _settings,
+                _restartOnSave
+            );
+
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Configuration saved successfully", Severity.Success);
+
+                if (_restartOnSave)
+                {
+                    Snackbar.Add("Server restart initiated", Severity.Info);
+                }
+            }
+            else
+            {
+                Snackbar.Add($"Failed to save configuration: {result.Error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void CancelChanges()
+    {
+        Navigation.NavigateTo("/configuration");
+    }
+}

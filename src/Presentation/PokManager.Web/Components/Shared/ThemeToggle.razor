@@ -1,0 +1,51 @@
+@using PokManager.Web.Services
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<MudTooltip Text="@GetTooltipText()">
+    <MudIconButton Icon="@GetThemeIcon()"
+                   Color="Color.Inherit"
+                   OnClick="ToggleTheme"
+                   Class="theme-toggle-button"
+                   aria-label="Toggle theme" />
+</MudTooltip>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await ThemeService.InitializeAsync();
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
+
+    private string GetThemeIcon()
+    {
+        return ThemeService.CurrentMode switch
+        {
+            ThemeMode.Light => Icons.Material.Filled.LightMode,
+            ThemeMode.Dark => Icons.Material.Filled.DarkMode,
+            ThemeMode.Auto => Icons.Material.Filled.BrightnessAuto,
+            _ => Icons.Material.Filled.BrightnessAuto
+        };
+    }
+
+    private string GetTooltipText()
+    {
+        return ThemeService.CurrentMode switch
+        {
+            ThemeMode.Light => "Light theme",
+            ThemeMode.Dark => "Dark theme",
+            ThemeMode.Auto => "Auto theme (system)",
+            _ => "Theme"
+        };
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= StateHasChanged;
+    }
+}

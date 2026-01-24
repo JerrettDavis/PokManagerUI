@@ -1,0 +1,129 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore PokManager.sln
+
+    - name: Check code formatting
+      run: dotnet format PokManager.sln --verify-no-changes --verbosity diagnostic
+
+    - name: Build solution
+      run: dotnet build PokManager.sln --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test PokManager.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: TestResults/**/*.trx
+        check_name: PR Test Results
+        comment_mode: off
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore PokManager.sln
+
+    - name: Build for analysis
+      run: dotnet build PokManager.sln --configuration Release --no-restore
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Checking for TODO/FIXME comments..."
+        if grep -r "TODO\|FIXME" src/ --include="*.cs" | grep -v "PokManager.AppHost"; then
+          echo "Found TODO/FIXME comments. Please review before merging."
+        else
+          echo "No TODO/FIXME comments found."
+        fi
+
+  dependency-check:
+    name: Dependency Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Check for deprecated packages
+      run: |
+        echo "Checking for deprecated NuGet packages..."
+        dotnet list package --deprecated || true
+
+    - name: Check for vulnerable packages
+      run: |
+        echo "Checking for vulnerable NuGet packages..."
+        dotnet list package --vulnerable || true
+
+    - name: Check for outdated packages
+      run: |
+        echo "Checking for outdated NuGet packages..."
+        dotnet list package --outdated || true
+
+  pr-status:
+    name: PR Status Check
+    needs: [validate-pr, code-quality, dependency-check]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Check all jobs
+      run: |
+        if [ "${{ needs.validate-pr.result }}" == "success" ] && \
+           [ "${{ needs.code-quality.result }}" == "success" ] && \
+           [ "${{ needs.dependency-check.result }}" == "success" ]; then
+          echo "All PR validation checks passed!"
+          exit 0
+        else
+          echo "Some PR validation checks failed!"
+          exit 1
+        fi

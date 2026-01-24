@@ -1,0 +1,9 @@
+.instance-card-running {
+    border-left: 4px solid var(--mud-palette-success);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.instance-card-running:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

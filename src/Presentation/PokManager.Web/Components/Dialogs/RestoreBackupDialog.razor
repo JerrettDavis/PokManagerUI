@@ -1,0 +1,181 @@
+@using MudBlazor
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@inject BackupApiClient BackupClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-3">Restore Backup Confirmation</MudText>
+
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            <MudText Typo="Typo.body1" Class="font-weight-bold">
+                Warning: This action will replace current server data
+            </MudText>
+            <MudText Typo="Typo.body2">
+                Restoring this backup will overwrite the current state of the server.
+                It is recommended to create a backup before proceeding.
+            </MudText>
+        </MudAlert>
+
+        <MudPaper Outlined="true" Class="pa-3 mb-4">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Backup Details</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Instance</MudText>
+                    <MudText Typo="Typo.body2">@InstanceName</MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Backup ID</MudText>
+                    <MudText Typo="Typo.body2">@Backup.BackupId.Substring(0, Math.Min(16, Backup.BackupId.Length))...</MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Created</MudText>
+                    <MudText Typo="Typo.body2">@Backup.CreatedAt.ToString("g")</MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Size</MudText>
+                    <MudText Typo="Typo.body2">@FormatFileSize(Backup.SizeBytes)</MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Compression</MudText>
+                    <MudText Typo="Typo.body2">@Backup.CompressionFormat.ToString()</MudText>
+                </MudItem>
+                @if (!string.IsNullOrWhiteSpace(Backup.ServerVersion))
+                {
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Server Version</MudText>
+                        <MudText Typo="Typo.body2">@Backup.ServerVersion</MudText>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudPaper>
+
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Restore Options</MudText>
+        <MudStack Spacing="2" Class="mb-3">
+            <MudSwitch T="bool" @bind-Value="_model.StopInstance"
+                       Label="Stop instance before restore"
+                       Color="Color.Primary">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Recommended to prevent data corruption
+                </MudText>
+            </MudSwitch>
+
+            <MudSwitch T="bool" @bind-Value="_model.StartAfterRestore"
+                       Label="Start instance after restore completes"
+                       Color="Color.Primary"
+                       Disabled="!_model.StopInstance">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Only available if instance is stopped
+                </MudText>
+            </MudSwitch>
+
+            <MudSwitch T="bool" @bind-Value="_model.BackupBeforeRestore"
+                       Label="Create backup before restoring"
+                       Color="Color.Primary">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Strongly recommended - allows rollback if needed
+                </MudText>
+            </MudSwitch>
+
+            <MudSwitch T="bool" @bind-Value="_model.ValidateBackup"
+                       Label="Validate backup before restore"
+                       Color="Color.Primary">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Verifies backup integrity before proceeding
+                </MudText>
+            </MudSwitch>
+        </MudStack>
+
+        @if (_restoring)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-3" />
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-text-secondary">
+                Restoring backup... Please wait.
+            </MudText>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3">
+                @_errorMessage
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_restoring">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="ConfirmRestore"
+                   Disabled="_restoring">
+            @(_restoring ? "Restoring..." : "Restore Backup")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IDialogReference MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public BackupViewModel Backup { get; set; } = new();
+
+    [Parameter]
+    public string InstanceName { get; set; } = string.Empty;
+
+    private RestoreBackupViewModel _model = new();
+    private bool _restoring = false;
+    private string _errorMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _model.BackupId = Backup.BackupId;
+        _model.InstanceId = Backup.InstanceId;
+        _model.InstanceName = InstanceName;
+        _model.CreatedAt = Backup.CreatedAt;
+        _model.SizeBytes = Backup.SizeBytes;
+        _model.CompressionFormat = Backup.CompressionFormat;
+    }
+
+    private async Task ConfirmRestore()
+    {
+        _restoring = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            await BackupClient.RestoreBackupAsync(_model);
+            Snackbar.Add("Backup restore completed successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            Snackbar.Add($"Error restoring backup: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _restoring = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

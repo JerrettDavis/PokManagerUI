@@ -1,0 +1,177 @@
+@using PokManager.Web.Models
+@using MudBlazor
+
+<MudCard Elevation="2" Class="@($"instance-card {GetStatusClass()}")">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">@Instance.Name</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(Instance.Status)" Variant="Variant.Filled">
+                    @Instance.Status
+                </MudChip>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudStack Spacing="2">
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Color="Color.Primary" />
+                    <MudText Typo="Typo.body2">@Instance.ServerMap</MudText>
+                </MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@GetHealthIcon(Instance.Health)" Size="Size.Small" Color="@GetHealthColor(Instance.Health)" />
+                    <MudText Typo="Typo.body2">@Instance.Health</MudText>
+                </MudStack>
+            </MudStack>
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Color="Color.Info" />
+                    <MudText Typo="Typo.body2">@Instance.CurrentPlayers / @Instance.MaxPlayers Players</MudText>
+                </MudStack>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Instance.Uptime</MudText>
+            </MudStack>
+
+            @if (Instance.Mods.Any())
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Extension" Size="Size.Small" Color="Color.Warning" />
+                    <MudText Typo="Typo.body2">@Instance.Mods.Count Mod(s)</MudText>
+                </MudStack>
+            }
+
+            <MudDivider Class="my-2" />
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row="true" Spacing="1">
+                    <MudChip T="string" Size="Size.Small" Color="@(Instance.IsPublic ? Color.Success : Color.Default)" Variant="Variant.Text">
+                        @(Instance.IsPublic ? "Public" : "Private")
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="@(Instance.IsPvE ? Color.Info : Color.Warning)" Variant="Variant.Text">
+                        @(Instance.IsPvE ? "PvE" : "PvP")
+                    </MudChip>
+                </MudStack>
+            </MudStack>
+        </MudStack>
+    </MudCardContent>
+    <MudCardActions>
+        <MudStack Row="true" Spacing="1" Class="ml-auto">
+            @if (ShowActions)
+            {
+                <MudTooltip Text="Start">
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   OnClick="OnStart"
+                                   Disabled="@(Instance.Status == InstanceStatus.Running || Instance.Status == InstanceStatus.Starting)" />
+                </MudTooltip>
+                <MudTooltip Text="Stop">
+                    <MudIconButton Icon="@Icons.Material.Filled.Stop"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="OnStop"
+                                   Disabled="@(Instance.Status == InstanceStatus.Stopped || Instance.Status == InstanceStatus.Stopping)" />
+                </MudTooltip>
+                <MudTooltip Text="Restart">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Warning"
+                                   Size="Size.Small"
+                                   OnClick="OnRestart"
+                                   Disabled="@(Instance.Status != InstanceStatus.Running)" />
+                </MudTooltip>
+            }
+            <MudTooltip Text="View Details">
+                <MudIconButton Icon="@Icons.Material.Filled.Info"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               Href="@($"/instances/{Instance.Id}")" />
+            </MudTooltip>
+        </MudStack>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public InstanceViewModel Instance { get; set; } = default!;
+
+    [Parameter]
+    public bool ShowActions { get; set; } = true;
+
+    [Parameter]
+    public EventCallback OnStart { get; set; }
+
+    [Parameter]
+    public EventCallback OnStop { get; set; }
+
+    [Parameter]
+    public EventCallback OnRestart { get; set; }
+
+    private string GetStatusClass()
+    {
+        return Instance.Status switch
+        {
+            InstanceStatus.Running => "border-left-success",
+            InstanceStatus.Stopped => "border-left-default",
+            InstanceStatus.Error => "border-left-error",
+            _ => ""
+        };
+    }
+
+    private Color GetStatusColor(InstanceStatus status)
+    {
+        return status switch
+        {
+            InstanceStatus.Running => Color.Success,
+            InstanceStatus.Stopped => Color.Default,
+            InstanceStatus.Starting => Color.Info,
+            InstanceStatus.Stopping => Color.Warning,
+            InstanceStatus.Error => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private string GetHealthIcon(InstanceHealth health)
+    {
+        return health switch
+        {
+            InstanceHealth.Healthy => Icons.Material.Filled.CheckCircle,
+            InstanceHealth.Degraded => Icons.Material.Filled.Warning,
+            InstanceHealth.Unhealthy => Icons.Material.Filled.Error,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private Color GetHealthColor(InstanceHealth health)
+    {
+        return health switch
+        {
+            InstanceHealth.Healthy => Color.Success,
+            InstanceHealth.Degraded => Color.Warning,
+            InstanceHealth.Unhealthy => Color.Error,
+            _ => Color.Default
+        };
+    }
+}
+
+<style>
+    .instance-card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .instance-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .border-left-success {
+        border-left: 4px solid var(--mud-palette-success);
+    }
+
+    .border-left-error {
+        border-left: 4px solid var(--mud-palette-error);
+    }
+
+    .border-left-default {
+        border-left: 4px solid var(--mud-palette-grey);
+    }
+</style>

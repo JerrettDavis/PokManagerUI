@@ -1,0 +1,218 @@
+# GitHub Labels Configuration for PokManagerApi
+# This file defines the complete label set for issue and PR management
+
+# ============================================================================
+# TYPE LABELS - What kind of work is this?
+# ============================================================================
+
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working correctly"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "Enhancement to existing functionality"
+
+- name: "feature"
+  color: "0e8a16"
+  description: "New feature or capability"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "refactoring"
+  color: "fbca04"
+  description: "Code refactoring without changing functionality"
+
+- name: "performance"
+  color: "ff6b6b"
+  description: "Performance improvements"
+
+- name: "security"
+  color: "ee0701"
+  description: "Security-related changes or fixes"
+
+- name: "breaking-change"
+  color: "b60205"
+  description: "Introduces breaking changes to the API"
+
+# ============================================================================
+# PRIORITY LABELS - How urgent is this?
+# ============================================================================
+
+- name: "priority: critical"
+  color: "b60205"
+  description: "Critical priority - needs immediate attention"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "High priority - should be addressed soon"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Medium priority - normal queue"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Low priority - nice to have"
+
+# ============================================================================
+# STATUS LABELS - What's the current state?
+# ============================================================================
+
+- name: "status: needs-triage"
+  color: "ededed"
+  description: "Needs initial review and categorization"
+
+- name: "status: in-progress"
+  color: "1d76db"
+  description: "Currently being worked on"
+
+- name: "status: blocked"
+  color: "b60205"
+  description: "Blocked by another issue or external dependency"
+
+- name: "status: on-hold"
+  color: "fef2c0"
+  description: "Work paused temporarily"
+
+- name: "status: needs-review"
+  color: "0e8a16"
+  description: "Ready for review"
+
+- name: "status: changes-requested"
+  color: "fbca04"
+  description: "Changes requested in review"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue or pull request already exists"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "This doesn't seem right or is not applicable"
+
+# ============================================================================
+# AREA LABELS - Which part of the codebase?
+# ============================================================================
+
+- name: "area: domain"
+  color: "c5def5"
+  description: "Domain layer (entities, value objects, domain services)"
+
+- name: "area: application"
+  color: "bfdadc"
+  description: "Application layer (use cases, DTOs, interfaces)"
+
+- name: "area: infrastructure"
+  color: "d4c5f9"
+  description: "Infrastructure layer (data access, external services)"
+
+- name: "area: presentation"
+  color: "f9d0c4"
+  description: "Presentation layer (API, Web UI)"
+
+- name: "area: hosting"
+  color: "e99695"
+  description: "Hosting configuration (Aspire, ServiceDefaults)"
+
+- name: "area: tests"
+  color: "c2e0c6"
+  description: "Test projects and testing infrastructure"
+
+- name: "area: build"
+  color: "fef2c0"
+  description: "Build system, CI/CD, deployment"
+
+- name: "area: docker"
+  color: "0db7ed"
+  description: "Docker configuration and containerization"
+
+# ============================================================================
+# SIZE LABELS - How much work is involved?
+# ============================================================================
+
+- name: "size: xs"
+  color: "00ff00"
+  description: "Extra small change (< 1 hour)"
+
+- name: "size: s"
+  color: "66ff66"
+  description: "Small change (few hours to 1 day)"
+
+- name: "size: m"
+  color: "ffff00"
+  description: "Medium change (1-3 days)"
+
+- name: "size: l"
+  color: "ff9900"
+  description: "Large change (3-7 days)"
+
+- name: "size: xl"
+  color: "ff0000"
+  description: "Extra large change (1-2 weeks)"
+
+- name: "size: xxl"
+  color: "990000"
+  description: "Huge change (> 2 weeks, consider breaking down)"
+
+# ============================================================================
+# SPECIAL LABELS - Community and workflow
+# ============================================================================
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers to the project"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed from the community"
+
+- name: "question"
+  color: "d876e3"
+  description: "Further information is requested"
+
+- name: "discussion"
+  color: "cc317c"
+  description: "Discussion or RFC (Request for Comments)"
+
+# ============================================================================
+# DEPENDENCY LABELS - Automated dependency updates
+# ============================================================================
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependencies update (managed by Dependabot)"
+
+- name: "nuget"
+  color: "004880"
+  description: "NuGet package updates"
+
+- name: "github-actions"
+  color: "000000"
+  description: "GitHub Actions workflow updates"
+
+# ============================================================================
+# CLEAN ARCHITECTURE LAYERS
+# ============================================================================
+
+- name: "clean-arch: domain"
+  color: "006b75"
+  description: "Domain layer concerns"
+
+- name: "clean-arch: application"
+  color: "1d76db"
+  description: "Application layer concerns"
+
+- name: "clean-arch: infrastructure"
+  color: "5319e7"
+  description: "Infrastructure layer concerns"
+
+- name: "clean-arch: presentation"
+  color: "e99695"
+  description: "Presentation layer concerns"

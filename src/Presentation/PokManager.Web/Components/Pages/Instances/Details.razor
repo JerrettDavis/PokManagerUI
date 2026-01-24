@@ -1,0 +1,1018 @@
+@page "/instances/{instanceId}"
+@using PokManager.Web.Models
+@using PokManager.Web.Services
+@using MudBlazor
+@using Microsoft.JSInterop
+@rendermode InteractiveServer
+
+<PageTitle>@(_instance?.Name ?? "Instance") - PokManager</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+}
+else if (_instance == null)
+{
+    <MudAlert Severity="Severity.Error">Instance not found.</MudAlert>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                               Href="/instances"
+                               Color="Color.Primary" />
+                <MudText Typo="Typo.h4">@_instance.Name</MudText>
+                <MudChip T="string" Size="Size.Medium" Color="@GetStatusColor(_instance.Status)">
+                    @_instance.Status
+                </MudChip>
+            </MudStack>
+
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                           OnClick="StartInstanceAsync"
+                           Disabled="@(_instance.Status == InstanceStatus.Running || _instance.Status == InstanceStatus.Starting)">
+                    Start
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Stop"
+                           OnClick="StopInstanceAsync"
+                           Disabled="@(_instance.Status == InstanceStatus.Stopped || _instance.Status == InstanceStatus.Stopping)">
+                    Stop
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="RestartInstanceAsync"
+                           Disabled="@(_instance.Status != InstanceStatus.Running)">
+                    Restart
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="DeleteInstanceAsync">
+                    Delete
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Dashboard">
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-4" Elevation="1">
+                            <MudText Typo="Typo.h6" Class="mb-3">Status Information</MudText>
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Status:</strong></MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_instance.Status)">@_instance.Status</MudChip>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Health:</strong></MudText>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@GetHealthIcon(_instance.Health)" Color="@GetHealthColor(_instance.Health)" Size="Size.Small" />
+                                        <MudText>@_instance.Health</MudText>
+                                    </MudStack>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Uptime:</strong></MudText>
+                                    <MudText>@_instance.Uptime</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Started At:</strong></MudText>
+                                    <MudText>@(_instance.StartedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-4" Elevation="1">
+                            <MudText Typo="Typo.h6" Class="mb-3">Server Information</MudText>
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Map:</strong></MudText>
+                                    <MudText>@_instance.ServerMap</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Players:</strong></MudText>
+                                    <MudText>@_instance.CurrentPlayers / @_instance.MaxPlayers</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Port:</strong></MudText>
+                                    <MudText>@_instance.Port</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Version:</strong></MudText>
+                                    <MudText>@_instance.Version</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-4" Elevation="1">
+                            <MudText Typo="Typo.h6" Class="mb-3">Resource Usage</MudText>
+                            <MudStack Spacing="3">
+                                <div>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                        <MudText><strong>CPU Usage:</strong></MudText>
+                                        <MudText>@_instance.CpuUsagePercent.ToString("F1")%</MudText>
+                                    </MudStack>
+                                    <MudProgressLinear Color="Color.Info" Value="@_instance.CpuUsagePercent" />
+                                </div>
+                                <div>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                        <MudText><strong>Memory Usage:</strong></MudText>
+                                        <MudText>@_instance.MemoryUsageMB MB</MudText>
+                                    </MudStack>
+                                    <MudProgressLinear Color="Color.Success" Value="@((_instance.MemoryUsageMB / 8192.0) * 100)" />
+                                </div>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudPaper Class="pa-4" Elevation="1">
+                            <MudText Typo="Typo.h6" Class="mb-3">Game Settings</MudText>
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Visibility:</strong></MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@(_instance.IsPublic ? Color.Success : Color.Default)">
+                                        @(_instance.IsPublic ? "Public" : "Private")
+                                    </MudChip>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Game Mode:</strong></MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@(_instance.IsPvE ? Color.Info : Color.Warning)">
+                                        @(_instance.IsPvE ? "PvE" : "PvP")
+                                    </MudChip>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Password Protected:</strong></MudText>
+                                    <MudText>@(string.IsNullOrEmpty(_instance.ServerPassword) ? "No" : "Yes")</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText><strong>Mods:</strong></MudText>
+                                    <MudText>@_instance.Mods.Count</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Configuration" Icon="@Icons.Material.Filled.Settings">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">Instance Configuration</MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">
+                            Edit Configuration
+                        </MudButton>
+                    </MudStack>
+
+                    <MudPaper Class="pa-4" Elevation="1">
+                        <MudSimpleTable Hover="true" Dense="true">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Instance ID</strong></td>
+                                    <td>@_instance.Id</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Instance Name</strong></td>
+                                    <td>@_instance.Name</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Server Map</strong></td>
+                                    <td>@_instance.ServerMap</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Max Players</strong></td>
+                                    <td>@_instance.MaxPlayers</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Port</strong></td>
+                                    <td>@_instance.Port</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Public Server</strong></td>
+                                    <td>@_instance.IsPublic</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>PvE Mode</strong></td>
+                                    <td>@_instance.IsPvE</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Server Password</strong></td>
+                                    <td>@(string.IsNullOrEmpty(_instance.ServerPassword) ? "(None)" : "••••••••")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Installed Mods</strong></td>
+                                    <td>
+                                        @if (_instance.Mods.Any())
+                                        {
+                                            @string.Join(", ", _instance.Mods)
+                                        }
+                                        else
+                                        {
+                                            <text>(None)</text>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudPaper>
+                </MudStack>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Backups" Icon="@Icons.Material.Filled.Backup">
+                <MudText Typo="Typo.h6" Class="mb-3">Backup History</MudText>
+                <MudTable Items="@_mockBackups" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Backup Name</MudTh>
+                        <MudTh>Created At</MudTh>
+                        <MudTh>Size</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Name</MudTd>
+                        <MudTd>@context.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                        <MudTd>@context.SizeMB MB</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success">@context.Status</MudChip>
+                        </MudTd>
+                        <MudTd>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">Restore</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error">Delete</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Players" Icon="@Icons.Material.Filled.People">
+                <MudText Typo="Typo.h6" Class="mb-3">Online Players (@GetPlayerCount())</MudText>
+                @if (GetPlayerCount() == 0)
+                {
+                    <MudAlert Severity="Severity.Info">No players currently online.</MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@GetPlayers()" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Player Name</MudTh>
+                            <MudTh>Steam ID</MudTh>
+                            <MudTh>Level</MudTh>
+                            <MudTh>Location</MudTh>
+                            <MudTh>Joined At</MudTh>
+                            <MudTh>Online For</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>@context.SteamId</MudTd>
+                            <MudTd>@context.Level</MudTd>
+                            <MudTd><code style="font-size: 0.85em;">@context.Location</code></MudTd>
+                            <MudTd>@context.JoinedAt.ToString("HH:mm:ss")</MudTd>
+                            <MudTd>@FormatTimeSpan(DateTime.UtcNow - context.JoinedAt)</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Logs" Icon="@Icons.Material.Filled.Description">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h6">Server Logs</MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Refresh"
+                                       OnClick="RefreshLogsAsync"
+                                       Size="Size.Small">
+                                Refresh
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4">
+                        <MudTabPanel Text="Docker Logs" Icon="@Icons.Material.Filled.Terminal">
+                            <MudPaper Class="pa-4" Elevation="1" Style="background-color: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; height: 500px; overflow-y: auto;">
+                                @foreach (var log in _mockLogs)
+                                {
+                                    <div style="margin-bottom: 4px;">
+                                        <span style="color: @GetLogLevelColor(log.Level)">[@log.Timestamp.ToString("HH:mm:ss")]</span>
+                                        <span style="color: @GetLogLevelColor(log.Level)">[<strong>@log.Level</strong>]</span>
+                                        <span>@log.Message</span>
+                                    </div>
+                                }
+                            </MudPaper>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Game Logs" Icon="@Icons.Material.Filled.SportsEsports">
+                            @if (_loadingGameLogs)
+                            {
+                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                            }
+                            else if (_gameLog != null)
+                            {
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.body2">
+                                            Showing @_gameLog.LineCount lines from ShooterGame.log
+                                        </MudText>
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadGameLogAsync(100))">Tail 100</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadGameLogAsync(500))">Tail 500</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadGameLogAsync(null))">Full Log</MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                    <MudPaper Class="pa-4" Elevation="1" Style="background-color: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; height: 500px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
+                                        @_gameLog.Content
+                                    </MudPaper>
+                                    
+                                    <MudText Typo="Typo.h6" Class="mt-4">Historical Game Logs</MudText>
+                                    @if (_gameLogFiles != null && _gameLogFiles.Any())
+                                    {
+                                        <MudTable Items="@_gameLogFiles" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
+                                            <HeaderContent>
+                                                <MudTh>File Name</MudTh>
+                                                <MudTh>Size</MudTh>
+                                                <MudTh>Last Modified</MudTh>
+                                                <MudTh>Actions</MudTh>
+                                            </HeaderContent>
+                                            <RowTemplate>
+                                                <MudTd>
+                                                    @if (context.IsCurrent == true)
+                                                    {
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Success">@context.FileName</MudChip>
+                                                    }
+                                                    else
+                                                    {
+                                                        @context.FileName
+                                                    }
+                                                </MudTd>
+                                                <MudTd>@FormatFileSize(context.SizeBytes)</MudTd>
+                                                <MudTd>@context.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                                                <MudTd>
+                                                    <MudButton Size="Size.Small"
+                                                               Variant="Variant.Text"
+                                                               Color="Color.Primary"
+                                                               StartIcon="@Icons.Material.Filled.Download"
+                                                               OnClick="@(() => DownloadGameLogAsync(context.FileName))">
+                                                        Download
+                                                    </MudButton>
+                                                </MudTd>
+                                            </RowTemplate>
+                                        </MudTable>
+                                    }
+                                    else
+                                    {
+                                        <MudAlert Severity="Severity.Info">No historical game logs found.</MudAlert>
+                                    }
+                                </MudStack>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Warning">Failed to load game logs. The instance may not have any game logs yet.</MudAlert>
+                            }
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="API Logs" Icon="@Icons.Material.Filled.Api">
+                            @if (_loadingApiLogs)
+                            {
+                                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                            }
+                            else if (_apiLog != null)
+                            {
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.body2">
+                                            Showing @_apiLog.LineCount lines from @_apiLog.FileName
+                                        </MudText>
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadApiLogAsync(100))">Tail 100</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadApiLogAsync(500))">Tail 500</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => LoadApiLogAsync(null))">Full Log</MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                    <MudPaper Class="pa-4" Elevation="1" Style="background-color: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', monospace; height: 500px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
+                                        @_apiLog.Content
+                                    </MudPaper>
+                                    
+                                    <MudText Typo="Typo.h6" Class="mt-4">Historical API Logs</MudText>
+                                    @if (_apiLogFiles != null && _apiLogFiles.Any())
+                                    {
+                                        <MudTable Items="@_apiLogFiles" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
+                                            <HeaderContent>
+                                                <MudTh>File Name</MudTh>
+                                                <MudTh>Size</MudTh>
+                                                <MudTh>Last Modified</MudTh>
+                                                <MudTh>Actions</MudTh>
+                                            </HeaderContent>
+                                            <RowTemplate>
+                                                <MudTd>@context.FileName</MudTd>
+                                                <MudTd>@FormatFileSize(context.SizeBytes)</MudTd>
+                                                <MudTd>@context.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                                                <MudTd>
+                                                    <MudButton Size="Size.Small"
+                                                               Variant="Variant.Text"
+                                                               Color="Color.Primary"
+                                                               StartIcon="@Icons.Material.Filled.Download"
+                                                               OnClick="@(() => DownloadApiLogAsync(context.FileName))">
+                                                        Download
+                                                    </MudButton>
+                                                </MudTd>
+                                            </RowTemplate>
+                                        </MudTable>
+                                    }
+                                    else
+                                    {
+                                        <MudAlert Severity="Severity.Info">No historical API logs found.</MudAlert>
+                                    }
+                                </MudStack>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Warning">Failed to load API logs. The instance may not have API logs enabled.</MudAlert>
+                            }
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudStack>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Telemetry" Icon="@Icons.Material.Filled.Analytics">
+                <MudText Typo="Typo.h6" Class="mb-3">Real-time Telemetry</MudText>
+                @{
+                    var telemetry = _instance != null ? Cache.GetTelemetry(_instance.Id) : null;
+                }
+                @if (telemetry == null)
+                {
+                    <MudAlert Severity="Severity.Info">No telemetry data available.</MudAlert>
+                }
+                else
+                {
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">System Performance</MudText>
+                                <MudStack Spacing="3">
+                                    <div>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                            <MudText><strong>CPU Usage:</strong></MudText>
+                                            <MudText>@telemetry.CpuUsagePercent.ToString("F1")%</MudText>
+                                        </MudStack>
+                                        <MudProgressLinear Color="@GetUsageColor(telemetry.CpuUsagePercent)" Value="@telemetry.CpuUsagePercent" />
+                                    </div>
+                                    <div>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                            <MudText><strong>Memory Usage:</strong></MudText>
+                                            <MudText>@telemetry.MemoryUsageMB MB</MudText>
+                                        </MudStack>
+                                        <MudProgressLinear Color="@GetUsageColor((telemetry.MemoryUsageMB / 8192.0) * 100)" Value="@((telemetry.MemoryUsageMB / 8192.0) * 100)" />
+                                    </div>
+                                    <MudDivider />
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText><strong>FPS:</strong></MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="@(telemetry.Fps >= 55 ? Color.Success : Color.Warning)">@telemetry.Fps</MudChip>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText><strong>Tick Rate:</strong></MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="@(telemetry.TickRate >= 28 ? Color.Success : Color.Warning)">@telemetry.TickRate TPS</MudChip>
+                                    </MudStack>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">Network Stats</MudText>
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText><strong>Incoming:</strong></MudText>
+                                        <MudText>@FormatBandwidth(telemetry.NetworkInKBps)</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText><strong>Outgoing:</strong></MudText>
+                                        <MudText>@FormatBandwidth(telemetry.NetworkOutKBps)</MudText>
+                                    </MudStack>
+                                    <MudDivider />
+                                    <MudText Typo="Typo.subtitle2" Class="mt-2"><strong>Last Updated:</strong></MudText>
+                                    <MudText>@telemetry.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">Game Statistics</MudText>
+                                <MudSimpleTable Dense="true" Hover="true">
+                                    <tbody>
+                                        @foreach (var stat in telemetry.GameStats)
+                                        {
+                                            <tr>
+                                                <td><strong>@stat.Key:</strong></td>
+                                                <td>@stat.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="Operations" Icon="@Icons.Material.Filled.History">
+                <MudText Typo="Typo.h6" Class="mb-3">Operations History</MudText>
+                <MudTable Items="@_mockOperations" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Operation</MudTh>
+                        <MudTh>Timestamp</MudTh>
+                        <MudTh>User</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Duration</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Operation</MudTd>
+                        <MudTd>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+                        <MudTd>@context.User</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="@(context.Success ? Color.Success : Color.Error)">
+                                @(context.Success ? "Success" : "Failed")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>@context.Duration</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudTabPanel>
+        </MudTabs>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public string InstanceId { get; set; } = string.Empty;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private InstanceService InstanceService { get; set; } = default!;
+    [Inject] private InstanceDataCache Cache { get; set; } = default!;
+    [Inject] private InstanceDataRepository Repository { get; set; } = default!;
+    [Inject] private LogApiClient LogApiClient { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private InstanceViewModel? _instance;
+    private bool _loading = true;
+
+    private List<BackupViewModel> _mockBackups = new();
+    private List<InstanceDataCache.LogEntry> _mockLogs = new();
+    private List<OperationHistory> _mockOperations = new();
+    
+    private bool _loadingGameLogs = false;
+    private bool _loadingApiLogs = false;
+    private GameLogResponse? _gameLog;
+    private ApiLogResponse? _apiLog;
+    private List<LogFileInfo> _gameLogFiles = new();
+    private List<LogFileInfo> _apiLogFiles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInstanceAsync();
+        LoadMockData();
+    }
+
+    private async Task LoadInstanceAsync()
+    {
+        _loading = true;
+
+        // Try to get from cache first
+        _instance = Cache.GetInstance(InstanceId);
+
+        // If not in cache, try to fetch from API
+        if (_instance == null)
+        {
+            var result = await InstanceService.GetInstanceAsync(InstanceId);
+            if (result.IsSuccess && result.Value != null)
+            {
+                _instance = result.Value;
+                Cache.UpdateInstanceData(InstanceId, _instance);
+            }
+            else
+            {
+                // Try to find by name in cache (case-insensitive)
+                var allInstances = Cache.GetAllInstances();
+                _instance = allInstances.FirstOrDefault(i => 
+                    i.Name.Equals(InstanceId, StringComparison.OrdinalIgnoreCase) ||
+                    i.Id.Equals(InstanceId, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        // Load logs, players, and telemetry from cache and database
+        if (_instance != null)
+        {
+            // Try cache first for realtime data
+            _mockLogs = Cache.GetLogs(_instance.Id, 50);
+            
+            // If cache is empty, load from database
+            if (!_mockLogs.Any())
+            {
+                var dbLogs = await Repository.GetRecentLogsAsync(_instance.Id, 50);
+                _mockLogs = dbLogs.Select(l => new InstanceDataCache.LogEntry
+                {
+                    Timestamp = l.Timestamp,
+                    Level = l.Level,
+                    Message = l.Message
+                }).ToList();
+            }
+            
+            LoadPlayerInfo();
+            await LoadTelemetryFromDb();
+            
+            // Load game and API logs
+            _ = LoadGameLogAsync(100);
+            _ = LoadApiLogAsync(100);
+        }
+
+        _loading = false;
+    }
+
+    private void LoadPlayerInfo()
+    {
+        if (_instance == null) return;
+
+        var players = Cache.GetPlayers(_instance.Id);
+        _instance.CurrentPlayers = players.Count;
+    }
+
+    private async Task LoadTelemetryFromDb()
+    {
+        if (_instance == null) return;
+
+        // Try cache first
+        var telemetry = Cache.GetTelemetry(_instance.Id);
+        if (telemetry != null)
+        {
+            _instance.CpuUsagePercent = telemetry.CpuUsagePercent;
+            _instance.MemoryUsageMB = (int)telemetry.MemoryUsageMB;
+            return;
+        }
+
+        // Fall back to database
+        var dbTelemetry = await Repository.GetLatestTelemetryAsync(_instance.Id);
+        if (dbTelemetry != null)
+        {
+            _instance.CpuUsagePercent = dbTelemetry.CpuUsagePercent;
+            _instance.MemoryUsageMB = (int)dbTelemetry.MemoryUsageMB;
+        }
+    }
+
+
+
+    private void LoadMockData()
+    {
+        _mockBackups = new List<BackupViewModel>
+        {
+            new() { Name = "backup_2026-01-20_14-30", CreatedAt = DateTime.Now.AddHours(-2), SizeMB = 1250, Status = "Complete" },
+            new() { Name = "backup_2026-01-19_14-30", CreatedAt = DateTime.Now.AddDays(-1), SizeMB = 1248, Status = "Complete" },
+            new() { Name = "backup_2026-01-18_14-30", CreatedAt = DateTime.Now.AddDays(-2), SizeMB = 1245, Status = "Complete" }
+        };
+
+        _mockOperations = new List<OperationHistory>
+        {
+            new() { Operation = "Restart", Timestamp = DateTime.Now.AddHours(-12), User = "admin", Success = true, Duration = "45s" },
+            new() { Operation = "Update Configuration", Timestamp = DateTime.Now.AddDays(-1), User = "admin", Success = true, Duration = "2s" },
+            new() { Operation = "Backup", Timestamp = DateTime.Now.AddDays(-1), User = "system", Success = true, Duration = "2m 15s" },
+            new() { Operation = "Start", Timestamp = DateTime.Now.AddDays(-2), User = "admin", Success = true, Duration = "1m 30s" }
+        };
+    }
+
+    private async Task RefreshLogsAsync()
+    {
+        await Task.WhenAll(
+            LoadGameLogAsync(100),
+            LoadApiLogAsync(100)
+        );
+        Snackbar.Add("Logs refreshed", Severity.Success);
+    }
+
+    private async Task LoadGameLogAsync(int? tail = 100)
+    {
+        if (_instance == null) return;
+
+        _loadingGameLogs = true;
+        try
+        {
+            _gameLog = await LogApiClient.GetGameLogAsync(_instance.Id, tail);
+            
+            // Also load the list of game logs
+            var gameLogList = await LogApiClient.ListGameLogsAsync(_instance.Id);
+            if (gameLogList != null)
+            {
+                _gameLogFiles = gameLogList.Logs;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading game logs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingGameLogs = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadApiLogAsync(int? tail = 100)
+    {
+        if (_instance == null) return;
+
+        _loadingApiLogs = true;
+        try
+        {
+            _apiLog = await LogApiClient.GetApiLogAsync(_instance.Id, tail);
+            
+            // Also load the list of API logs
+            var apiLogList = await LogApiClient.ListApiLogsAsync(_instance.Id);
+            if (apiLogList != null)
+            {
+                _apiLogFiles = apiLogList.Logs;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading API logs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loadingApiLogs = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadGameLogAsync(string fileName)
+    {
+        if (_instance == null) return;
+
+        try
+        {
+            var stream = await LogApiClient.DownloadGameLogAsync(_instance.Id, fileName);
+            if (stream != null)
+            {
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var bytes = memoryStream.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+                Snackbar.Add($"Downloaded {fileName}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Failed to download {fileName}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading log: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DownloadApiLogAsync(string fileName)
+    {
+        if (_instance == null) return;
+
+        try
+        {
+            var stream = await LogApiClient.DownloadApiLogAsync(_instance.Id, fileName);
+            if (stream != null)
+            {
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var bytes = memoryStream.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+                Snackbar.Add($"Downloaded {fileName}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Failed to download {fileName}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading log: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private Color GetStatusColor(InstanceStatus status) => status switch
+    {
+        InstanceStatus.Running => Color.Success,
+        InstanceStatus.Stopped => Color.Default,
+        InstanceStatus.Starting => Color.Info,
+        InstanceStatus.Stopping => Color.Warning,
+        InstanceStatus.Error => Color.Error,
+        _ => Color.Default
+    };
+
+    private string GetHealthIcon(InstanceHealth health) => health switch
+    {
+        InstanceHealth.Healthy => Icons.Material.Filled.CheckCircle,
+        InstanceHealth.Degraded => Icons.Material.Filled.Warning,
+        InstanceHealth.Unhealthy => Icons.Material.Filled.Error,
+        _ => Icons.Material.Filled.Help
+    };
+
+    private Color GetHealthColor(InstanceHealth health) => health switch
+    {
+        InstanceHealth.Healthy => Color.Success,
+        InstanceHealth.Degraded => Color.Warning,
+        InstanceHealth.Unhealthy => Color.Error,
+        _ => Color.Default
+    };
+
+    private string GetLogLevelColor(string level) => level switch
+    {
+        "ERROR" => "#f44336",
+        "WARN" => "#ff9800",
+        "INFO" => "#4caf50",
+        _ => "#d4d4d4"
+    };
+
+    private async Task StartInstanceAsync()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Start Instance",
+            $"Are you sure you want to start '{_instance!.Name}'?",
+            yesText: "Start", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            _instance.Status = InstanceStatus.Starting;
+            StateHasChanged();
+            
+            Snackbar.Add($"Starting instance '{_instance.Name}'...", Severity.Info);
+            
+            var startResult = await InstanceService.StartInstanceAsync(_instance.Id);
+            
+            if (startResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{_instance.Name}' started successfully.", Severity.Success);
+                await Task.Delay(2000);
+                await LoadInstanceAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to start instance: {startResult.Error}", Severity.Error);
+                _instance.Status = InstanceStatus.Stopped;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task StopInstanceAsync()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Stop Instance",
+            $"Are you sure you want to stop '{_instance!.Name}'? All connected players will be disconnected.",
+            yesText: "Stop", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            _instance.Status = InstanceStatus.Stopping;
+            StateHasChanged();
+            
+            Snackbar.Add($"Stopping instance '{_instance.Name}'...", Severity.Info);
+            
+            var stopResult = await InstanceService.StopInstanceAsync(_instance.Id);
+            
+            if (stopResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{_instance.Name}' stopped.", Severity.Success);
+                await Task.Delay(2000);
+                await LoadInstanceAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to stop instance: {stopResult.Error}", Severity.Error);
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task RestartInstanceAsync()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Restart Instance",
+            $"Are you sure you want to restart '{_instance!.Name}'?",
+            yesText: "Restart", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            _instance.Status = InstanceStatus.Stopping;
+            StateHasChanged();
+            
+            Snackbar.Add($"Restarting instance '{_instance.Name}'...", Severity.Info);
+            
+            var restartResult = await InstanceService.RestartInstanceAsync(_instance.Id);
+            
+            if (restartResult.IsSuccess)
+            {
+                Snackbar.Add($"Instance '{_instance.Name}' restarted successfully.", Severity.Success);
+                await Task.Delay(3000);
+                await LoadInstanceAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to restart instance: {restartResult.Error}", Severity.Error);
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteInstanceAsync()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Instance",
+            $"Are you sure you want to DELETE '{_instance!.Name}'? This action cannot be undone and all data will be lost!",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            Snackbar.Add($"Deleting instance '{_instance.Name}'...", Severity.Warning);
+            await Task.Delay(1500);
+            Snackbar.Add($"Instance '{_instance.Name}' deleted.", Severity.Success);
+            NavigationManager.NavigateTo("/instances");
+        }
+    }
+
+    private List<InstanceDataCache.PlayerInfo> GetPlayers()
+    {
+        if (_instance == null) return new List<InstanceDataCache.PlayerInfo>();
+        return Cache.GetPlayers(_instance.Id);
+    }
+
+    private int GetPlayerCount()
+    {
+        return GetPlayers().Count;
+    }
+
+    private string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalHours >= 1)
+            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
+        if (timeSpan.TotalMinutes >= 1)
+            return $"{(int)timeSpan.TotalMinutes}m";
+        return $"{(int)timeSpan.TotalSeconds}s";
+    }
+
+    private string FormatBandwidth(long kbps)
+    {
+        if (kbps >= 1024)
+            return $"{(kbps / 1024.0):F2} MB/s";
+        return $"{kbps} KB/s";
+    }
+
+    private Color GetUsageColor(double percentage)
+    {
+        if (percentage >= 80) return Color.Error;
+        if (percentage >= 60) return Color.Warning;
+        return Color.Success;
+    }
+
+    private class BackupViewModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int SizeMB { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
+
+    private class OperationHistory
+    {
+        public string Operation { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string User { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public string Duration { get; set; } = string.Empty;
+    }
+}
