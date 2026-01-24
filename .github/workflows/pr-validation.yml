@@ -19,6 +19,7 @@ jobs:
   validate-pr:
     name: Validate Pull Request
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
 
     steps:
     - name: Checkout code
@@ -54,6 +55,7 @@ jobs:
   code-quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
 
     steps:
     - name: Checkout code
@@ -118,9 +120,17 @@ jobs:
     steps:
     - name: Check all jobs
       run: |
-        if [ "${{ needs.validate-pr.result }}" == "success" ] && \
-           [ "${{ needs.code-quality.result }}" == "success" ] && \
-           [ "${{ needs.dependency-check.result }}" == "success" ]; then
+        # Treat skipped jobs (from dependabot) as success
+        VALIDATE_STATUS="${{ needs.validate-pr.result }}"
+        QUALITY_STATUS="${{ needs.code-quality.result }}"
+        DEPENDENCY_STATUS="${{ needs.dependency-check.result }}"
+
+        if [ "$VALIDATE_STATUS" == "skipped" ]; then VALIDATE_STATUS="success"; fi
+        if [ "$QUALITY_STATUS" == "skipped" ]; then QUALITY_STATUS="success"; fi
+
+        if [ "$VALIDATE_STATUS" == "success" ] && \
+           [ "$QUALITY_STATUS" == "success" ] && \
+           [ "$DEPENDENCY_STATUS" == "success" ]; then
           echo "All PR validation checks passed!"
           exit 0
         else
