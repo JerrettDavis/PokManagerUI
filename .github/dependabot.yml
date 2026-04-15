@@ -72,6 +72,26 @@ updates:
           - "minor"
           - "patch"
 
+      # Microsoft.Extensions.* packages (except AspNetCore and Logging which are separate)
+      extensions:
+        patterns:
+          - "Microsoft.Extensions.ServiceDiscovery*"
+          - "Microsoft.Extensions.Http.Resilience*"
+          - "Microsoft.Extensions.Hosting.Abstractions*"
+          - "Microsoft.Extensions.DependencyInjection.Abstractions*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # UI Component libraries
+      ui:
+        patterns:
+          - "MudBlazor*"
+          - "bunit*"
+        update-types:
+          - "minor"
+          - "patch"
+
   # GitHub Actions - Weekly updates
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -92,3 +112,14 @@ updates:
       - "PokManagerApi/maintainers"
     assignees:
       - "PokManagerApi/maintainers"
+    groups:
+      # GitHub Actions dependencies
+      actions:
+        patterns:
+          - "actions/*"
+          - "codecov/*"
+          - "docker/*"
+          - "softprops/*"
+        update-types:
+          - "minor"
+          - "patch"
