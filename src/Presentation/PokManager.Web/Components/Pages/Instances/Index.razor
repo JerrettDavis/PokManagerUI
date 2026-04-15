@@ -270,7 +270,7 @@
 
     private async Task StartInstanceAsync(InstanceViewModel instance)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Start Instance",
             $"Are you sure you want to start '{instance.Name}'?",
             yesText: "Start", cancelText: "Cancel");
@@ -292,7 +292,7 @@
 
     private async Task StopInstanceAsync(InstanceViewModel instance)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Stop Instance",
             $"Are you sure you want to stop '{instance.Name}'? All connected players will be disconnected.",
             yesText: "Stop", cancelText: "Cancel");
@@ -314,7 +314,7 @@
 
     private async Task RestartInstanceAsync(InstanceViewModel instance)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Restart Instance",
             $"Are you sure you want to restart '{instance.Name}'? All connected players will be temporarily disconnected.",
             yesText: "Restart", cancelText: "Cancel");

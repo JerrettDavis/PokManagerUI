@@ -857,7 +857,7 @@ else
 
     private async Task StartInstanceAsync()
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Start Instance",
             $"Are you sure you want to start '{_instance!.Name}'?",
             yesText: "Start", cancelText: "Cancel");
@@ -889,7 +889,7 @@ else
 
     private async Task StopInstanceAsync()
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Stop Instance",
             $"Are you sure you want to stop '{_instance!.Name}'? All connected players will be disconnected.",
             yesText: "Stop", cancelText: "Cancel");
@@ -920,7 +920,7 @@ else
 
     private async Task RestartInstanceAsync()
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Restart Instance",
             $"Are you sure you want to restart '{_instance!.Name}'?",
             yesText: "Restart", cancelText: "Cancel");
@@ -951,7 +951,7 @@ else
 
     private async Task DeleteInstanceAsync()
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Delete Instance",
             $"Are you sure you want to DELETE '{_instance!.Name}'? This action cannot be undone and all data will be lost!",
             yesText: "Delete", cancelText: "Cancel");

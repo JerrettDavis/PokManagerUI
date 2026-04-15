@@ -252,7 +252,7 @@
 
     private async Task DeleteBackup(BackupViewModel backup)
     {
-        var confirmed = await DialogService.ShowMessageBox(
+        var confirmed = await DialogService.ShowMessageBoxAsync(
             "Delete Backup",
             $"Are you sure you want to delete backup {backup.BackupId}? This action cannot be undone.",
             yesText: "Delete",
