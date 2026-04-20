@@ -1,33 +1,33 @@
+using Microsoft.EntityFrameworkCore;
 using PokManager.ApiService.Endpoints;
-using PokManager.Infrastructure.Docker.Services;
+using PokManager.Application.Configuration;
 using PokManager.Application.Ports;
-using PokManager.Application.UseCases.InstanceDiscovery.ListInstances;
-using PokManager.Application.UseCases.InstanceQuery;
-using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
-using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
-using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
-using PokManager.Application.UseCases.InstanceLifecycle.CreateContainer;
-using PokManager.Application.UseCases.InstanceLifecycle.DestroyContainer;
-using PokManager.Application.UseCases.InstanceLifecycle.RecreateContainer;
-using PokManager.Application.UseCases.BackupManagement.ListBackups;
 using PokManager.Application.UseCases.BackupManagement.CreateBackup;
+using PokManager.Application.UseCases.BackupManagement.ListBackups;
 using PokManager.Application.UseCases.BackupManagement.RestoreBackup;
 using PokManager.Application.UseCases.BackupManagement.UploadBackup;
-using PokManager.Application.UseCases.ConfigurationTemplates.ListTemplates;
-using PokManager.Application.UseCases.ConfigurationTemplates.SaveTemplate;
-using PokManager.Application.UseCases.ConfigurationTemplates.PreviewTemplate;
+using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
 using PokManager.Application.UseCases.ConfigurationTemplates.ApplyTemplate;
 using PokManager.Application.UseCases.ConfigurationTemplates.DeleteTemplate;
 using PokManager.Application.UseCases.ConfigurationTemplates.ExportTemplate;
 using PokManager.Application.UseCases.ConfigurationTemplates.ImportTemplate;
-using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
-using PokManager.Infrastructure.Common;
-using PokManager.Infrastructure.Fakes;
-using PokManager.Infrastructure.Caching;
+using PokManager.Application.UseCases.ConfigurationTemplates.ListTemplates;
+using PokManager.Application.UseCases.ConfigurationTemplates.PreviewTemplate;
+using PokManager.Application.UseCases.ConfigurationTemplates.SaveTemplate;
+using PokManager.Application.UseCases.InstanceDiscovery.ListInstances;
+using PokManager.Application.UseCases.InstanceLifecycle.CreateContainer;
+using PokManager.Application.UseCases.InstanceLifecycle.DestroyContainer;
+using PokManager.Application.UseCases.InstanceLifecycle.RecreateContainer;
+using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
+using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
+using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
+using PokManager.Application.UseCases.InstanceQuery;
 using PokManager.Infrastructure.BackgroundWorkers;
-using PokManager.Application.Configuration;
+using PokManager.Infrastructure.Caching;
+using PokManager.Infrastructure.Common;
+using PokManager.Infrastructure.Docker.Services;
+using PokManager.Infrastructure.Fakes;
 using PokManager.Web.Data;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -168,7 +168,7 @@ app.MapDefaultEndpoints();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }

@@ -178,7 +178,7 @@ public class InMemoryBackupStoreTests
     }
 
     [Fact]
-    public void Reset_ClearsAllBackups()
+    public async Task Reset_ClearsAllBackups()
     {
         // Arrange
         var backup1 = CreateBackupInfo("backup-1", "instance-1", DateTimeOffset.UtcNow);
@@ -190,8 +190,8 @@ public class InMemoryBackupStoreTests
         _store.Reset();
 
         // Assert
-        var result1 = _store.ListBackupsAsync("instance-1").Result;
-        var result2 = _store.ListBackupsAsync("instance-2").Result;
+        var result1 = await _store.ListBackupsAsync("instance-1");
+        var result2 = await _store.ListBackupsAsync("instance-2");
         Assert.Empty(result1.Value);
         Assert.Empty(result2.Value);
     }

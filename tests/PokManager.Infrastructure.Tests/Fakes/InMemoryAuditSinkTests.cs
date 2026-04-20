@@ -216,13 +216,13 @@ public class InMemoryAuditSinkTests
     }
 
     [Fact]
-    public void Reset_ClearsAllEvents()
+    public async Task Reset_ClearsAllEvents()
     {
         // Arrange
         var event1 = CreateAuditEvent("instance-1", "Start");
         var event2 = CreateAuditEvent("instance-2", "Stop");
-        _auditSink.EmitAsync(event1).Wait();
-        _auditSink.EmitAsync(event2).Wait();
+        await _auditSink.EmitAsync(event1);
+        await _auditSink.EmitAsync(event2);
 
         // Act
         _auditSink.Reset();

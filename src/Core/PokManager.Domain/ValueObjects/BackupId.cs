@@ -5,7 +5,7 @@ namespace PokManager.Domain.ValueObjects;
 
 public sealed class BackupId : IEquatable<BackupId>
 {
-    private static readonly Regex ValidationPattern = new(
+    private static readonly Regex s_validationPattern = new(
         @"^([a-zA-Z0-9_-]+)_backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})$",
         RegexOptions.Compiled);
 
@@ -29,7 +29,7 @@ public sealed class BackupId : IEquatable<BackupId>
             return Result<BackupId>.Failure("BackupId cannot be empty or whitespace.");
         }
 
-        var match = ValidationPattern.Match(value);
+        var match = s_validationPattern.Match(value);
         if (!match.Success)
         {
             return Result<BackupId>.Failure(

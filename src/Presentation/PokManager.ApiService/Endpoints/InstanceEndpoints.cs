@@ -1,12 +1,12 @@
+using PokManager.Application.BackgroundWorkers;
+using PokManager.Application.Caching;
+using PokManager.Application.Configuration;
+using PokManager.Application.Ports;
 using PokManager.Application.UseCases.InstanceDiscovery.ListInstances;
-using PokManager.Application.UseCases.InstanceQuery;
+using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
-using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
-using PokManager.Application.Caching;
-using PokManager.Application.Ports;
-using PokManager.Application.BackgroundWorkers;
-using PokManager.Application.Configuration;
+using PokManager.Application.UseCases.InstanceQuery;
 
 namespace PokManager.ApiService.Endpoints;
 
@@ -22,9 +22,9 @@ public static class InstanceEndpoints
             CancellationToken ct) =>
         {
             var result = await handler.Handle(new ListInstancesRequest(), ct);
-            
-            return result.IsSuccess 
-                ? Results.Ok(result.Value) 
+
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
                 : Results.BadRequest(new { error = result.Error });
         })
         .WithName("ListInstances")
@@ -92,11 +92,11 @@ public static class InstanceEndpoints
             CancellationToken ct) =>
         {
             var result = await handler.Handle(
-                new StartInstanceRequest(instanceId, Guid.NewGuid().ToString()), 
+                new StartInstanceRequest(instanceId, Guid.NewGuid().ToString()),
                 ct);
-            
-            return result.IsSuccess 
-                ? Results.Ok(new { message = result.Value.Message }) 
+
+            return result.IsSuccess
+                ? Results.Ok(new { message = result.Value.Message })
                 : Results.BadRequest(new { error = result.Error });
         })
         .WithName("StartInstance")
@@ -109,11 +109,11 @@ public static class InstanceEndpoints
             CancellationToken ct) =>
         {
             var result = await handler.Handle(
-                new StopInstanceRequest(instanceId, Guid.NewGuid().ToString(), ForceKill: false), 
+                new StopInstanceRequest(instanceId, Guid.NewGuid().ToString(), ForceKill: false),
                 ct);
-            
-            return result.IsSuccess 
-                ? Results.Ok(new { message = result.Value.Message }) 
+
+            return result.IsSuccess
+                ? Results.Ok(new { message = result.Value.Message })
                 : Results.BadRequest(new { error = result.Error });
         })
         .WithName("StopInstance")
@@ -126,11 +126,11 @@ public static class InstanceEndpoints
             CancellationToken ct) =>
         {
             var result = await handler.Handle(
-                new RestartInstanceRequest(instanceId, Guid.NewGuid().ToString(), GracePeriodSeconds: 30), 
+                new RestartInstanceRequest(instanceId, Guid.NewGuid().ToString(), GracePeriodSeconds: 30),
                 ct);
-            
-            return result.IsSuccess 
-                ? Results.Ok(new { message = result.Value.Message }) 
+
+            return result.IsSuccess
+                ? Results.Ok(new { message = result.Value.Message })
                 : Results.BadRequest(new { error = result.Error });
         })
         .WithName("RestartInstance")
@@ -148,7 +148,7 @@ public static class InstanceEndpoints
                 // Get container ID for the instance
                 var containers = await dockerService.ListContainersAsync(ct);
                 var container = containers.FirstOrDefault(c => c.Name.Contains(instanceId, StringComparison.OrdinalIgnoreCase));
-                
+
                 if (container == null)
                 {
                     return Results.NotFound(new { error = $"Container for instance '{instanceId}' not found" });
@@ -156,8 +156,9 @@ public static class InstanceEndpoints
 
                 // Fetch logs from Docker
                 var logs = await dockerService.GetContainerLogsAsync(container.Id, tail, ct);
-                
-                return Results.Ok(new { 
+
+                return Results.Ok(new
+                {
                     instanceId = instanceId,
                     containerId = container.Id,
                     logs = logs
@@ -184,7 +185,7 @@ public static class InstanceEndpoints
                 // Path to docker-compose files on the server
                 var basePath = "/home/pokuser/asa_server";
                 var configPath = Path.Combine(basePath, $"Instance_{instanceId}", $"docker-compose-{instanceId}.yaml");
-                
+
                 if (!File.Exists(configPath))
                 {
                     return Results.NotFound(new { error = $"Configuration file not found for instance '{instanceId}'" });
@@ -192,7 +193,7 @@ public static class InstanceEndpoints
 
                 var parser = new PokManager.Infrastructure.Docker.Services.DockerComposeParser();
                 var config = parser.ParseFile(configPath);
-                
+
                 if (config == null)
                 {
                     return Results.Problem(

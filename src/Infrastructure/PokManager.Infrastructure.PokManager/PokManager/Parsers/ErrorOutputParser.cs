@@ -10,12 +10,12 @@ namespace PokManager.Infrastructure.PokManager.PokManager.Parsers;
 /// </summary>
 public class ErrorOutputParser : IPokManagerOutputParser<PokManagerError>
 {
-    private static readonly Regex ErrorPattern = new(
+    private static readonly Regex s_errorPattern = new(
         @"Error:\s*(?<message>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline
     );
 
-    private static readonly Dictionary<PokManagerErrorCode, string[]> ErrorPatterns = new()
+    private static readonly Dictionary<PokManagerErrorCode, string[]> s_errorPatterns = new()
     {
         [PokManagerErrorCode.InstanceNotFound] = new[] { "instance not found", "does not exist", "cannot find", "unknown instance" },
         [PokManagerErrorCode.InstanceAlreadyExists] = new[] { "already exists", "duplicate" },
@@ -38,7 +38,7 @@ public class ErrorOutputParser : IPokManagerOutputParser<PokManagerError>
         }
 
         // Check if this is an error message
-        var match = ErrorPattern.Match(output);
+        var match = s_errorPattern.Match(output);
         if (!match.Success)
         {
             return Result<PokManagerError>.Failure("Output is not an error message");
@@ -61,7 +61,7 @@ public class ErrorOutputParser : IPokManagerOutputParser<PokManagerError>
         var lowerMessage = message.ToLowerInvariant();
 
         // Check patterns in priority order
-        foreach (var (errorCode, patterns) in ErrorPatterns)
+        foreach (var (errorCode, patterns) in s_errorPatterns)
         {
             foreach (var pattern in patterns)
             {

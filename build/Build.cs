@@ -17,7 +17,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 
 [ShutdownDotNetAfterServerBuild]
-class Build : NukeBuild
+internal class Build : NukeBuild
 {
     /// Support plugins are available for:
     ///   - JetBrains ReSharper        https://nuke.build/resharper
@@ -28,30 +28,30 @@ class Build : NukeBuild
     public static int Main() => Execute<Build>(x => x.Compile);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
+    private readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
 
     [Parameter("Enable code coverage collection")]
-    readonly bool CoverageEnabled = true;
+    private readonly bool CoverageEnabled = true;
 
     [Parameter("Verbosity level for build output")]
-    readonly DotNetVerbosity BuildVerbosity = DotNetVerbosity.minimal;
+    private readonly DotNetVerbosity BuildVerbosity = DotNetVerbosity.minimal;
 
     [Solution(GenerateProjects = false)]
-    readonly Solution Solution;
+    private readonly Solution Solution;
 
     [GitVersion(NoFetch = true, Framework = "net10.0")]
     [CanBeNull]
-    readonly GitVersion GitVersion;
+    private readonly GitVersion GitVersion;
 
-    AbsolutePath SourceDirectory => RootDirectory / "src";
-    AbsolutePath TestsDirectory => RootDirectory / "tests";
-    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath TestResultsDirectory => ArtifactsDirectory / "test-results";
-    AbsolutePath CoverageDirectory => ArtifactsDirectory / "coverage";
-    AbsolutePath PublishDirectory => ArtifactsDirectory / "publish";
-    AbsolutePath PackagesDirectory => ArtifactsDirectory / "packages";
+    private AbsolutePath SourceDirectory => RootDirectory / "src";
+    private AbsolutePath TestsDirectory => RootDirectory / "tests";
+    private AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    private AbsolutePath TestResultsDirectory => ArtifactsDirectory / "test-results";
+    private AbsolutePath CoverageDirectory => ArtifactsDirectory / "coverage";
+    private AbsolutePath PublishDirectory => ArtifactsDirectory / "publish";
+    private AbsolutePath PackagesDirectory => ArtifactsDirectory / "packages";
 
-    Target Clean => _ => _
+    private Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
         {
@@ -60,14 +60,14 @@ class Build : NukeBuild
             ArtifactsDirectory.CreateOrCleanDirectory();
         });
 
-    Target Restore => _ => _
+    private Target Restore => _ => _
         .Executes(() =>
         {
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
         });
 
-    Target Compile => _ => _
+    private Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
@@ -81,7 +81,7 @@ class Build : NukeBuild
                 .SetVerbosity(BuildVerbosity));
         });
 
-    Target Test => _ => _
+    private Target Test => _ => _
         .DependsOn(Compile)
         .Produces(TestResultsDirectory / "*.trx")
         .Produces(CoverageDirectory / "*.xml")
@@ -110,7 +110,7 @@ class Build : NukeBuild
             DotNetTest(testSettings);
         });
 
-    Target IntegrationTest => _ => _
+    private Target IntegrationTest => _ => _
         .DependsOn(Compile)
         .Produces(TestResultsDirectory / "integration-*.trx")
         .Executes(() =>
@@ -129,7 +129,7 @@ class Build : NukeBuild
                     .SetProjectFile(project)));
         });
 
-    Target Coverage => _ => _
+    private Target Coverage => _ => _
         .DependsOn(Test)
         .Produces(CoverageDirectory / "*.xml")
         .Executes(() =>
@@ -143,7 +143,7 @@ class Build : NukeBuild
             }
         });
 
-    Target CoverageReport => _ => _
+    private Target CoverageReport => _ => _
         .DependsOn(Coverage)
         .Produces(CoverageDirectory / "report" / "**/*")
         .Executes(() =>
@@ -161,7 +161,7 @@ class Build : NukeBuild
             Log.Information("Coverage report generated: {Report}", CoverageDirectory / "report" / "index.html");
         });
 
-    Target Pack => _ => _
+    private Target Pack => _ => _
         .DependsOn(Compile)
         .Produces(PackagesDirectory / "*.nupkg")
         .Executes(() =>
@@ -176,7 +176,7 @@ class Build : NukeBuild
                 .SetVerbosity(BuildVerbosity));
         });
 
-    Target Publish => _ => _
+    private Target Publish => _ => _
         .DependsOn(Compile)
         .Produces(PublishDirectory / "**/*")
         .Executes(() =>
@@ -199,19 +199,19 @@ class Build : NukeBuild
                     .SetOutput(PublishDirectory / project.Name)));
         });
 
-    Target Format => _ => _
+    private Target Format => _ => _
         .Executes(() =>
         {
             DotNet($"format \"{Solution}\" --verbosity {Verbosity}");
         });
 
-    Target FormatVerify => _ => _
+    private Target FormatVerify => _ => _
         .Executes(() =>
         {
             DotNet($"format \"{Solution}\" --verify-no-changes --verbosity {Verbosity}");
         });
 
-    Target Lint => _ => _
+    private Target Lint => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
@@ -224,12 +224,12 @@ class Build : NukeBuild
                 .SetVerbosity(BuildVerbosity));
         });
 
-    Target Default => _ => _
+    private Target Default => _ => _
         .DependsOn(Restore)
         .DependsOn(Compile)
         .DependsOn(Test);
 
-    Target Full => _ => _
+    private Target Full => _ => _
         .DependsOn(Clean)
         .DependsOn(Restore)
         .DependsOn(Compile)
@@ -238,7 +238,7 @@ class Build : NukeBuild
         .DependsOn(Pack)
         .DependsOn(Publish);
 
-    Target CI => _ => _
+    private Target CI => _ => _
         .DependsOn(Clean)
         .DependsOn(Restore)
         .DependsOn(Compile)

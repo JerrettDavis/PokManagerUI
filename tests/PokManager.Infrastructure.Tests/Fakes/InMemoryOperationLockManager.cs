@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using PokManager.Application.Ports;
 using PokManager.Domain.Common;
-using System.Collections.Concurrent;
 
 namespace PokManager.Infrastructure.Tests.Fakes;
 

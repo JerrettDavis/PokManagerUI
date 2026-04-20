@@ -34,18 +34,18 @@ public class DockerComposeParser
                 .Build();
 
             var doc = deserializer.Deserialize<Dictionary<string, object>>(yaml);
-            
+
             if (!doc.ContainsKey("services"))
                 return null;
 
             var services = (Dictionary<object, object>)doc["services"];
             var firstService = services.Values.FirstOrDefault();
-            
+
             if (firstService == null)
                 return null;
 
             var service = (Dictionary<object, object>)firstService;
-            
+
             var config = new DockerComposeConfig
             {
                 ConfigFilePath = filePath

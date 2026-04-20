@@ -1,7 +1,7 @@
-using PokManager.Domain.Common;
-using PokManager.Application.Ports;
-using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using PokManager.Application.Ports;
+using PokManager.Domain.Common;
 
 namespace PokManager.Infrastructure.Docker.Services;
 

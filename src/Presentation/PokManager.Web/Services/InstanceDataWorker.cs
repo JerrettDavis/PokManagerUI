@@ -36,7 +36,7 @@ public class InstanceDataWorker : BackgroundService
             try
             {
                 await UpdateInstanceDataAsync(stoppingToken);
-                
+
                 // Run cleanup if needed
                 if (DateTime.UtcNow - _lastCleanup > _cleanupInterval)
                 {
@@ -136,14 +136,14 @@ public class InstanceDataWorker : BackgroundService
         try
         {
             _logger.LogDebug("Fetching real player data via RCON for instance {InstanceId}", instanceId);
-            
+
             var players = await rconService.GetOnlinePlayersAsync(instanceId, cancellationToken);
-            
+
             if (players.Any())
             {
                 _logger.LogInformation("Found {Count} players online for instance {InstanceId}", players.Count, instanceId);
             }
-            
+
             return players;
         }
         catch (Exception ex)
@@ -154,7 +154,7 @@ public class InstanceDataWorker : BackgroundService
     }
 
     private async Task<List<InstanceDataCache.LogEntry>> FetchRealLogsAsync(
-        string instanceId, 
+        string instanceId,
         InstanceService instanceService,
         CancellationToken cancellationToken)
     {
@@ -164,9 +164,9 @@ public class InstanceDataWorker : BackgroundService
             using var scope = _serviceProvider.CreateScope();
             var httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
             using var httpClient = httpClientFactory.CreateClient(nameof(InstanceService));
-            
+
             var response = await httpClient.GetAsync($"/api/instances/{instanceId}/logs?tail=50", cancellationToken);
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to fetch logs for instance {InstanceId}: {StatusCode}", instanceId, response.StatusCode);
@@ -242,14 +242,14 @@ public class InstanceDataWorker : BackgroundService
     private string DetermineLogLevel(string line)
     {
         var lowerLine = line.ToLowerInvariant();
-        
+
         if (lowerLine.Contains("error") || lowerLine.Contains("fatal") || lowerLine.Contains("exception"))
             return "ERROR";
         if (lowerLine.Contains("warn") || lowerLine.Contains("warning"))
             return "WARN";
         if (lowerLine.Contains("debug") || lowerLine.Contains("trace"))
             return "DEBUG";
-        
+
         return "INFO";
     }
 
@@ -261,10 +261,10 @@ public class InstanceDataWorker : BackgroundService
         {
             using var scope = _serviceProvider.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<InstanceDataRepository>();
-            
+
             // Keep 30 days of historical data
             await repository.CleanupOldDataAsync(TimeSpan.FromDays(30), cancellationToken);
-            
+
             _logger.LogInformation("Completed database cleanup");
         }
         catch (Exception ex)

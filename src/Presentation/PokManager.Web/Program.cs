@@ -1,23 +1,23 @@
-using PokManager.Web;
-using PokManager.Web.Components;
-using PokManager.Web.Services;
+using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using PokManager.Application.Ports;
+using PokManager.Application.UseCases.BackupManagement.CreateBackup;
+using PokManager.Application.UseCases.BackupManagement.ListBackups;
+using PokManager.Application.UseCases.Configuration.ApplyConfiguration;
+using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
+using PokManager.Application.UseCases.InstanceDiscovery.ListInstances;
+using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
-using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
-using PokManager.Application.UseCases.BackupManagement.CreateBackup;
 using PokManager.Application.UseCases.InstanceManagement.SaveWorld;
-using PokManager.Application.UseCases.Configuration.ApplyConfiguration;
-using PokManager.Application.UseCases.InstanceDiscovery.ListInstances;
 using PokManager.Application.UseCases.InstanceQuery;
-using PokManager.Application.UseCases.BackupManagement.ListBackups;
-using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
-using PokManager.Infrastructure.Fakes;
 using PokManager.Infrastructure.Common;
 using PokManager.Infrastructure.Docker.Services;
-using MudBlazor.Services;
-using Microsoft.EntityFrameworkCore;
+using PokManager.Infrastructure.Fakes;
+using PokManager.Web;
+using PokManager.Web.Components;
 using PokManager.Web.Data;
+using PokManager.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

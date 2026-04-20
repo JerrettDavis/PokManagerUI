@@ -5,8 +5,8 @@ using NSubstitute.ExceptionExtensions;
 using PokManager.Application.Ports;
 using PokManager.Infrastructure.PokManager;
 using PokManager.Infrastructure.Shell;
-using static TinyBDD.TestContext;
 using Xunit;
+using static TinyBDD.TestContext;
 
 namespace PokManager.Infrastructure.Tests.PokManager;
 

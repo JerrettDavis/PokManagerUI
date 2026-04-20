@@ -1,5 +1,5 @@
-using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
 using PokManager.Application.UseCases.Configuration.ApplyConfiguration;
+using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
 using PokManager.Domain.Common;
 using PokManager.Web.Models;
 

@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using PokManager.Application.BackgroundWorkers;
+using PokManager.Application.Caching;
+using PokManager.Application.Configuration;
+using PokManager.Application.Ports;
 using PokManager.Application.UseCases.BackupManagement.CreateBackup;
 using PokManager.Application.UseCases.BackupManagement.ListBackups;
 using PokManager.Application.UseCases.BackupManagement.RestoreBackup;
 using PokManager.Application.UseCases.BackupManagement.UploadBackup;
-using PokManager.Application.Caching;
-using PokManager.Application.Ports;
-using PokManager.Application.BackgroundWorkers;
-using PokManager.Application.Configuration;
 
 namespace PokManager.ApiService.Endpoints;
 

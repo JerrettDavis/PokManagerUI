@@ -30,7 +30,7 @@ public class DockerComposeConfig
     public int RestartNoticeMinutes { get; set; }
     public string TimeZone { get; set; } = string.Empty;
     public string MemoryLimit { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Path to the docker-compose file
     /// </summary>

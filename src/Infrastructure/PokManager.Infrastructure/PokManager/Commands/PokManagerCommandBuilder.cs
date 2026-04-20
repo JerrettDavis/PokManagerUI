@@ -11,12 +11,12 @@ namespace PokManager.Infrastructure.PokManager.Commands;
 /// </summary>
 public sealed class PokManagerCommandBuilder
 {
-    private static readonly Regex DangerousCharactersPattern = new(
+    private static readonly Regex s_dangerousCharactersPattern = new(
         @"[;&|`$()<>\\]",
         RegexOptions.Compiled
     );
 
-    private static readonly Regex PathTraversalPattern = new(
+    private static readonly Regex s_pathTraversalPattern = new(
         @"\.\./",
         RegexOptions.Compiled
     );
@@ -145,7 +145,7 @@ public sealed class PokManagerCommandBuilder
     private static Result<Unit> ValidateArgumentValue(string key, string value)
     {
         // Check for dangerous characters that could lead to command injection
-        if (DangerousCharactersPattern.IsMatch(value))
+        if (s_dangerousCharactersPattern.IsMatch(value))
         {
             return Result.Failure<Unit>(
                 $"Argument '{key}' contains dangerous characters that could lead to command injection."
@@ -153,7 +153,7 @@ public sealed class PokManagerCommandBuilder
         }
 
         // Check for path traversal attempts
-        if (PathTraversalPattern.IsMatch(value))
+        if (s_pathTraversalPattern.IsMatch(value))
         {
             return Result.Failure<Unit>(
                 $"Argument '{key}' contains path traversal patterns which are not allowed."

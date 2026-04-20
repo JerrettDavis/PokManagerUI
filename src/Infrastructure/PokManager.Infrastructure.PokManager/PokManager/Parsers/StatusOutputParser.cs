@@ -11,12 +11,12 @@ namespace PokManager.Infrastructure.PokManager.PokManager.Parsers;
 /// </summary>
 public class StatusOutputParser : IPokManagerOutputParser<InstanceStatus>
 {
-    private static readonly Regex StatusPattern = new(
+    private static readonly Regex s_statusPattern = new(
         @"Instance:\s*(?<instance>[^,]+)\s*,\s*State:\s*(?<state>[^,]+)\s*,\s*Container:\s*(?<container>[^,]+)\s*,\s*Health:\s*(?<health>[^,\s]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex ErrorPattern = new(
+    private static readonly Regex s_errorPattern = new(
         @"Error:\s*(?<message>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
@@ -29,7 +29,7 @@ public class StatusOutputParser : IPokManagerOutputParser<InstanceStatus>
         }
 
         // Check for error messages first
-        var errorMatch = ErrorPattern.Match(output);
+        var errorMatch = s_errorPattern.Match(output);
         if (errorMatch.Success)
         {
             var errorMessage = errorMatch.Groups["message"].Value.Trim();
@@ -37,7 +37,7 @@ public class StatusOutputParser : IPokManagerOutputParser<InstanceStatus>
         }
 
         // Parse status output
-        var match = StatusPattern.Match(output);
+        var match = s_statusPattern.Match(output);
         if (!match.Success)
         {
             return Result<InstanceStatus>.Failure("Failed to parse status output: invalid format");

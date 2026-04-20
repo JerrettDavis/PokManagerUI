@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PokManager.Web.Data.Entities;
-using System.Text.Json;
 
 namespace PokManager.Web.Data;
 
@@ -9,7 +9,7 @@ namespace PokManager.Web.Data;
 /// </summary>
 public static class PresetTemplateSeeder
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -73,7 +73,7 @@ public static class PresetTemplateSeeder
             Difficulty = "Normal",
             MapCompatibility = "",
             Tags = "pvp,competitive,fastpaced",
-            ConfigurationDataJson = JsonSerializer.Serialize(config, JsonOptions),
+            ConfigurationDataJson = JsonSerializer.Serialize(config, s_jsonOptions),
             IncludedSettingsJson = "[]",
             Author = "System",
             TimesUsed = 0,
@@ -113,7 +113,7 @@ public static class PresetTemplateSeeder
             Difficulty = "Easy",
             MapCompatibility = "",
             Tags = "pve,casual,relaxed,coop",
-            ConfigurationDataJson = JsonSerializer.Serialize(config, JsonOptions),
+            ConfigurationDataJson = JsonSerializer.Serialize(config, s_jsonOptions),
             IncludedSettingsJson = "[]",
             Author = "System",
             TimesUsed = 0,
@@ -153,7 +153,7 @@ public static class PresetTemplateSeeder
             Difficulty = "Beginner",
             MapCompatibility = "",
             Tags = "pve,beginner,easy,learning",
-            ConfigurationDataJson = JsonSerializer.Serialize(config, JsonOptions),
+            ConfigurationDataJson = JsonSerializer.Serialize(config, s_jsonOptions),
             IncludedSettingsJson = "[]",
             Author = "System",
             TimesUsed = 0,
@@ -193,7 +193,7 @@ public static class PresetTemplateSeeder
             Difficulty = "Hardcore",
             MapCompatibility = "",
             Tags = "pve,hardcore,survival,challenge",
-            ConfigurationDataJson = JsonSerializer.Serialize(config, JsonOptions),
+            ConfigurationDataJson = JsonSerializer.Serialize(config, s_jsonOptions),
             IncludedSettingsJson = "[]",
             Author = "System",
             TimesUsed = 0,
@@ -238,7 +238,7 @@ public static class PresetTemplateSeeder
             Difficulty = "Normal",
             MapCompatibility = "",
             Tags = "balanced,vanilla,default,standard",
-            ConfigurationDataJson = JsonSerializer.Serialize(config, JsonOptions),
+            ConfigurationDataJson = JsonSerializer.Serialize(config, s_jsonOptions),
             IncludedSettingsJson = "[]",
             Author = "System",
             TimesUsed = 0,

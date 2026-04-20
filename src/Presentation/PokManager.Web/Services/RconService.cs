@@ -1,5 +1,5 @@
-using CoreRCON;
 using System.Text.RegularExpressions;
+using CoreRCON;
 
 namespace PokManager.Web.Services;
 
@@ -19,7 +19,7 @@ public class RconService
     /// Gets online players from an ARK server via RCON.
     /// </summary>
     public async Task<List<InstanceDataCache.PlayerInfo>> GetOnlinePlayersAsync(
-        string instanceId, 
+        string instanceId,
         CancellationToken cancellationToken = default)
     {
         var config = RconConfiguration.GetByInstanceId(instanceId);
@@ -32,8 +32,8 @@ public class RconService
         try
         {
             using var rcon = new RCON(
-                System.Net.IPAddress.Parse(config.Host), 
-                (ushort)config.Port, 
+                System.Net.IPAddress.Parse(config.Host),
+                (ushort)config.Port,
                 config.Password,
                 timeout: 5000);
 
@@ -41,14 +41,14 @@ public class RconService
 
             // Execute ListPlayers command
             var response = await rcon.SendCommandAsync("ListPlayers");
-            
+
             _logger.LogDebug("RCON response from {Instance}: {Response}", instanceId, response);
 
             return ParsePlayerList(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error connecting to RCON for instance {InstanceId} at {Host}:{Port}", 
+            _logger.LogError(ex, "Error connecting to RCON for instance {InstanceId} at {Host}:{Port}",
                 instanceId, config.Host, config.Port);
             return new List<InstanceDataCache.PlayerInfo>();
         }
@@ -58,7 +58,7 @@ public class RconService
     /// Sends a broadcast message to all players on the server.
     /// </summary>
     public async Task<bool> BroadcastMessageAsync(
-        string instanceId, 
+        string instanceId,
         string message,
         CancellationToken cancellationToken = default)
     {
@@ -68,13 +68,13 @@ public class RconService
         try
         {
             using var rcon = new RCON(
-                System.Net.IPAddress.Parse(config.Host), 
-                (ushort)config.Port, 
+                System.Net.IPAddress.Parse(config.Host),
+                (ushort)config.Port,
                 config.Password);
 
             await rcon.ConnectAsync();
             await rcon.SendCommandAsync($"Broadcast {message}");
-            
+
             return true;
         }
         catch (Exception ex)
@@ -88,7 +88,7 @@ public class RconService
     /// Executes a custom RCON command on the server.
     /// </summary>
     public async Task<string?> ExecuteCommandAsync(
-        string instanceId, 
+        string instanceId,
         string command,
         CancellationToken cancellationToken = default)
     {
@@ -98,8 +98,8 @@ public class RconService
         try
         {
             using var rcon = new RCON(
-                System.Net.IPAddress.Parse(config.Host), 
-                (ushort)config.Port, 
+                System.Net.IPAddress.Parse(config.Host),
+                (ushort)config.Port,
                 config.Password);
 
             await rcon.ConnectAsync();

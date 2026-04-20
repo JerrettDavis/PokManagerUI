@@ -194,9 +194,9 @@ public class DockerPokManagerClient : IPokManagerClient
         {
             var containerName = $"asa_{instanceId}";
             var success = await _dockerService.StartContainerAsync(containerName, cancellationToken);
-            
-            return success 
-                ? Result.Success() 
+
+            return success
+                ? Result.Success()
                 : Result.Failure<Unit>($"Failed to start instance '{instanceId}'");
         }
         catch (Exception ex)
@@ -211,9 +211,9 @@ public class DockerPokManagerClient : IPokManagerClient
         {
             var containerName = $"asa_{instanceId}";
             var success = await _dockerService.StopContainerAsync(containerName, cancellationToken);
-            
-            return success 
-                ? Result.Success() 
+
+            return success
+                ? Result.Success()
                 : Result.Failure<Unit>($"Failed to stop instance '{instanceId}'");
         }
         catch (Exception ex)
@@ -228,9 +228,9 @@ public class DockerPokManagerClient : IPokManagerClient
         {
             var containerName = $"asa_{instanceId}";
             var success = await _dockerService.RestartContainerAsync(containerName, cancellationToken);
-            
-            return success 
-                ? Result.Success() 
+
+            return success
+                ? Result.Success()
                 : Result.Failure<Unit>($"Failed to restart instance '{instanceId}'");
         }
         catch (Exception ex)
@@ -272,7 +272,7 @@ public class DockerPokManagerClient : IPokManagerClient
         await process.WaitForExitAsync(cancellationToken);
 
         var envVars = new Dictionary<string, string>();
-        
+
         try
         {
             var envArray = JsonSerializer.Deserialize<string[]>(output);
@@ -315,7 +315,7 @@ public class DockerPokManagerClient : IPokManagerClient
         await process.WaitForExitAsync(cancellationToken);
 
         var state = new Dictionary<string, string>();
-        
+
         try
         {
             var stateJson = JsonSerializer.Deserialize<JsonElement>(output);
@@ -546,7 +546,7 @@ public class DockerPokManagerClient : IPokManagerClient
             var containerName = $"asa_{instanceId}";
             var lines = options?.MaxLines ?? 100;
             var logs = await _dockerService.GetContainerLogsAsync(containerName, lines, cancellationToken);
-            
+
             // Parse logs into LogEntry objects (simple implementation for now)
             var logEntries = logs.Split('\n')
                 .Where(line => !string.IsNullOrWhiteSpace(line))

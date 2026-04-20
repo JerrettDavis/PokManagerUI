@@ -14,7 +14,7 @@ namespace PokManager.Infrastructure.PokManager.PokManager.Parsers;
 /// </summary>
 public class DetailsOutputParser : IPokManagerOutputParser<Dictionary<string, string>>
 {
-    private static readonly Regex ErrorPattern = new(
+    private static readonly Regex s_errorPattern = new(
         @"Error:\s*(?<message>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
@@ -32,7 +32,7 @@ public class DetailsOutputParser : IPokManagerOutputParser<Dictionary<string, st
         }
 
         // Check for error messages first
-        var errorMatch = ErrorPattern.Match(output);
+        var errorMatch = s_errorPattern.Match(output);
         if (errorMatch.Success)
         {
             var errorMessage = errorMatch.Groups["message"].Value.Trim();

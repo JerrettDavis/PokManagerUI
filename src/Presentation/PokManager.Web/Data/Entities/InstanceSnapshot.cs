@@ -9,13 +9,13 @@ public class InstanceSnapshot
     public string InstanceId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
-    
+
     // Status fields
     public string Status { get; set; } = string.Empty;
     public string Health { get; set; } = string.Empty;
     public string? Uptime { get; set; }
     public DateTime? StartedAt { get; set; }
-    
+
     // Server info
     public string? ServerMap { get; set; }
     public int MaxPlayers { get; set; }
@@ -24,11 +24,11 @@ public class InstanceSnapshot
     public string? Version { get; set; }
     public bool IsPublic { get; set; }
     public bool IsPvE { get; set; }
-    
+
     // Resource usage
     public double CpuUsagePercent { get; set; }
     public long MemoryUsageMB { get; set; }
-    
+
     // Navigation properties
     public ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
     public ICollection<TelemetrySnapshot> TelemetrySnapshots { get; set; } = new List<TelemetrySnapshot>();

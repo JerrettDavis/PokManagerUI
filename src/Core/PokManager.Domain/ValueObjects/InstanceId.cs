@@ -5,7 +5,7 @@ namespace PokManager.Domain.ValueObjects;
 
 public sealed class InstanceId : IEquatable<InstanceId>
 {
-    private static readonly Regex ValidationPattern = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
+    private static readonly Regex s_validationPattern = new(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
     private const int MaxLength = 64;
 
     public string Value { get; }
@@ -27,7 +27,7 @@ public sealed class InstanceId : IEquatable<InstanceId>
             return Result<InstanceId>.Failure($"InstanceId cannot exceed {MaxLength} characters.");
         }
 
-        if (!ValidationPattern.IsMatch(value))
+        if (!s_validationPattern.IsMatch(value))
         {
             return Result<InstanceId>.Failure("InstanceId must contain only alphanumeric characters, hyphens, and underscores.");
         }
