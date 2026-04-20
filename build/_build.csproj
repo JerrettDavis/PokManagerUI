@@ -19,4 +19,9 @@
     <None Include="..\PokManager.sln" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.15" />
+    <PackageReference Include="NuGet.Packaging" Version="6.12.5" />
+  </ItemGroup>
+
 </Project>
