@@ -30,7 +30,7 @@ public class DockerInstanceDiscoveryService : IInstanceDiscoveryService
         try
         {
             var containers = await _dockerService.ListContainersAsync(cancellationToken);
-            
+
             // Extract instance IDs from container names (remove 'asa_' prefix)
             var instanceIds = containers
                 .Where(c => c.Name.StartsWith("asa_", StringComparison.OrdinalIgnoreCase))

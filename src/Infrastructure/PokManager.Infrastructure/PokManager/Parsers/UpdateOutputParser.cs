@@ -9,32 +9,32 @@ namespace PokManager.Infrastructure.PokManager.Parsers;
 /// </summary>
 public class UpdateOutputParser
 {
-    private static readonly Regex CurrentVersionPattern = new(
+    private static readonly Regex s_currentVersionPattern = new(
         @"Current\s+version:\s*(?<version>[\d\.]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex LatestVersionPattern = new(
+    private static readonly Regex s_latestVersionPattern = new(
         @"Latest\s+version:\s*(?<version>[\d\.]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex UpdateAvailablePattern = new(
+    private static readonly Regex s_updateAvailablePattern = new(
         @"Update\s+available:\s*(?<available>Yes|No|True|False)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex EstimatedSizePattern = new(
+    private static readonly Regex s_estimatedSizePattern = new(
         @"Estimated\s+size:\s*(?<size>\d+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex RequiresRestartPattern = new(
+    private static readonly Regex s_requiresRestartPattern = new(
         @"Requires\s+restart:\s*(?<restart>Yes|No|True|False)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex ReleaseNotesPattern = new(
+    private static readonly Regex s_releaseNotesPattern = new(
         @"Release\s+notes:\s*(?<notes>.+?)(?=\n[A-Z]|\z)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline
     );
@@ -49,12 +49,12 @@ public class UpdateOutputParser
             return Result.Failure<UpdateAvailability>("Output is null or empty");
         }
 
-        var currentVersionMatch = CurrentVersionPattern.Match(output);
-        var latestVersionMatch = LatestVersionPattern.Match(output);
-        var updateAvailableMatch = UpdateAvailablePattern.Match(output);
-        var estimatedSizeMatch = EstimatedSizePattern.Match(output);
-        var requiresRestartMatch = RequiresRestartPattern.Match(output);
-        var releaseNotesMatch = ReleaseNotesPattern.Match(output);
+        var currentVersionMatch = s_currentVersionPattern.Match(output);
+        var latestVersionMatch = s_latestVersionPattern.Match(output);
+        var updateAvailableMatch = s_updateAvailablePattern.Match(output);
+        var estimatedSizeMatch = s_estimatedSizePattern.Match(output);
+        var requiresRestartMatch = s_requiresRestartPattern.Match(output);
+        var releaseNotesMatch = s_releaseNotesPattern.Match(output);
 
         var currentVersion = currentVersionMatch.Success
             ? currentVersionMatch.Groups["version"].Value.Trim()
@@ -139,7 +139,7 @@ public class UpdateOutputParser
             (restartedMatch.Groups["restarted"].Value.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
              output.Contains("Restarting server", StringComparison.OrdinalIgnoreCase));
 
-        var requiresRestartMatch = RequiresRestartPattern.Match(output);
+        var requiresRestartMatch = s_requiresRestartPattern.Match(output);
         var requiredRestart = requiresRestartMatch.Success &&
             (requiresRestartMatch.Groups["restart"].Value.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
              requiresRestartMatch.Groups["restart"].Value.Equals("True", StringComparison.OrdinalIgnoreCase));

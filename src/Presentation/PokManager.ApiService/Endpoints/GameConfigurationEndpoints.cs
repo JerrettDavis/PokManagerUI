@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
 using PokManager.Application.UseCases.Configuration.ApplyConfiguration;
+using PokManager.Application.UseCases.ConfigurationManagement.GetConfiguration;
 
 namespace PokManager.ApiService.Endpoints;
 

@@ -14,7 +14,7 @@ public class PlayerSession
     public int Level { get; set; }
     public string? Location { get; set; }
     public bool IsOnline { get; set; }
-    
+
     // Navigation
     public int? InstanceSnapshotId { get; set; }
     public InstanceSnapshot? InstanceSnapshot { get; set; }

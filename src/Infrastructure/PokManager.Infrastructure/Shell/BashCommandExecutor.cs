@@ -106,8 +106,10 @@ public sealed class BashCommandExecutor(ILogger<BashCommandExecutor> logger) : I
             // Wait for the completion to finish
             await completedTask;
 
-            // Ensure all output is captured
-            await Task.Delay(100, cancellationToken); // Small delay to ensure all data is received
+            // Ensure all async stdout/stderr output has been fully delivered.
+            // Process.WaitForExit() (no timeout) guarantees all output stream
+            // handlers have completed when BeginOutputReadLine/BeginErrorReadLine are used.
+            process.WaitForExit();
 
             var exitCode = process.ExitCode;
             var stdOut = stdOutBuilder.ToString().TrimEnd();

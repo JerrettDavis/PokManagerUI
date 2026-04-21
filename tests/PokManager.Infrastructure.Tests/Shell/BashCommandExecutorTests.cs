@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using PokManager.Infrastructure.Shell;
-using static TinyBDD.TestContext;
 using Xunit;
+using static TinyBDD.TestContext;
 
 namespace PokManager.Infrastructure.Tests.Shell;
 

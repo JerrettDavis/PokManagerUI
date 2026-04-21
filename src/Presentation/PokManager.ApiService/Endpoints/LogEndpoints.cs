@@ -31,7 +31,8 @@ public static class LogEndpoints
                     lines = lines.TakeLast(tail.Value).ToArray();
                 }
 
-                return Results.Ok(new {
+                return Results.Ok(new
+                {
                     instanceId,
                     logType = "game",
                     content = string.Join(Environment.NewLine, lines),
@@ -145,7 +146,8 @@ public static class LogEndpoints
                     lines = lines.TakeLast(tail.Value).ToArray();
                 }
 
-                return Results.Ok(new {
+                return Results.Ok(new
+                {
                     instanceId,
                     logType = "api",
                     fileName = latestLog.Name,

@@ -1,8 +1,8 @@
 using FluentAssertions;
+using PokManager.Application.Models;
 using PokManager.Domain.Common;
 using PokManager.Domain.Enumerations;
 using PokManager.Infrastructure.PokManager.PokManager.Parsers;
-using PokManager.Application.Models;
 using Xunit;
 
 namespace PokManager.Infrastructure.Tests.PokManager.Parsers;

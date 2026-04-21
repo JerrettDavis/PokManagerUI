@@ -12,12 +12,12 @@ namespace PokManager.Infrastructure.PokManager.PokManager.Parsers;
 /// </summary>
 public class BackupListParser : IPokManagerOutputParser<IReadOnlyList<ParsedBackupInfo>>
 {
-    private static readonly Regex BackupPattern = new(
+    private static readonly Regex s_backupPattern = new(
         @"backup_(?<instanceId>.+?)_(?<date>\d{8})_(?<time>\d{6})\.tar\.(?<compression>gz|zst|.+?)(?:\s|$|,)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex ErrorPattern = new(
+    private static readonly Regex s_errorPattern = new(
         @"Error:\s*(?<message>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
@@ -31,7 +31,7 @@ public class BackupListParser : IPokManagerOutputParser<IReadOnlyList<ParsedBack
         }
 
         // Check for error messages first
-        var errorMatch = ErrorPattern.Match(output);
+        var errorMatch = s_errorPattern.Match(output);
         if (errorMatch.Success)
         {
             var errorMessage = errorMatch.Groups["message"].Value.Trim();
@@ -53,7 +53,7 @@ public class BackupListParser : IPokManagerOutputParser<IReadOnlyList<ParsedBack
             var fileName = Path.GetFileName(trimmedLine);
 
             // Add space at the end to help regex match
-            var match = BackupPattern.Match(fileName + " ");
+            var match = s_backupPattern.Match(fileName + " ");
             if (!match.Success)
             {
                 continue;

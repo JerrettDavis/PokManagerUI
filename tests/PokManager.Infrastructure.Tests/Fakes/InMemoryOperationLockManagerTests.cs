@@ -153,18 +153,18 @@ public class InMemoryOperationLockManagerTests
     }
 
     [Fact]
-    public void Reset_ClearsAllLocks()
+    public async Task Reset_ClearsAllLocks()
     {
         // Arrange
-        var lock1 = _lockManager.AcquireLockAsync("instance-1", "op-1", TimeSpan.FromSeconds(30)).Result;
-        var lock2 = _lockManager.AcquireLockAsync("instance-2", "op-2", TimeSpan.FromSeconds(30)).Result;
+        var lock1 = await _lockManager.AcquireLockAsync("instance-1", "op-1", TimeSpan.FromSeconds(30));
+        var lock2 = await _lockManager.AcquireLockAsync("instance-2", "op-2", TimeSpan.FromSeconds(30));
 
         // Act
         _lockManager.Reset();
 
         // Assert
-        var isLocked1 = _lockManager.IsLockedAsync("instance-1").Result;
-        var isLocked2 = _lockManager.IsLockedAsync("instance-2").Result;
+        var isLocked1 = await _lockManager.IsLockedAsync("instance-1");
+        var isLocked2 = await _lockManager.IsLockedAsync("instance-2");
         Assert.False(isLocked1);
         Assert.False(isLocked2);
 

@@ -5,7 +5,7 @@ namespace PokManager.Domain.ValueObjects;
 
 public sealed class ServerPassword : IEquatable<ServerPassword>
 {
-    private static readonly Regex ValidationPattern = new(@"^[a-zA-Z0-9]+$", RegexOptions.Compiled);
+    private static readonly Regex s_validationPattern = new(@"^[a-zA-Z0-9]+$", RegexOptions.Compiled);
     private const int MinLength = 4;
     private const int MaxLength = 64;
 
@@ -33,7 +33,7 @@ public sealed class ServerPassword : IEquatable<ServerPassword>
             return Result<ServerPassword>.Failure($"ServerPassword cannot exceed {MaxLength} characters.");
         }
 
-        if (!ValidationPattern.IsMatch(value))
+        if (!s_validationPattern.IsMatch(value))
         {
             return Result<ServerPassword>.Failure("ServerPassword must contain only alphanumeric characters.");
         }

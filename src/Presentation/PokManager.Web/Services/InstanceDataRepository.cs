@@ -1,8 +1,8 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PokManager.Web.Data;
 using PokManager.Web.Data.Entities;
 using PokManager.Web.Models;
-using System.Text.Json;
 
 namespace PokManager.Web.Services;
 
@@ -75,8 +75,8 @@ public class InstanceDataRepository
         foreach (var player in players)
         {
             var existingSession = await context.PlayerSessions
-                .FirstOrDefaultAsync(p => p.InstanceId == instanceId 
-                    && p.SteamId == player.SteamId 
+                .FirstOrDefaultAsync(p => p.InstanceId == instanceId
+                    && p.SteamId == player.SteamId
                     && p.IsOnline, cancellationToken);
 
             if (existingSession == null)
@@ -143,7 +143,7 @@ public class InstanceDataRepository
             .ToListAsync(cancellationToken);
 
         var newLogs = logs
-            .Where(log => !existingHashes.Any(e => 
+            .Where(log => !existingHashes.Any(e =>
                 e.Timestamp == log.Timestamp && e.Message == log.Message))
             .Select(log => new Data.Entities.LogEntry
             {

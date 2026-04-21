@@ -15,7 +15,7 @@ public class Instance(string instanceId, string sessionName, string mapName, int
     public string? ContainerId { get; set; }
 
     // State transition rules
-    private static readonly Dictionary<InstanceState, HashSet<InstanceState>> AllowedTransitions = new()
+    private static readonly Dictionary<InstanceState, HashSet<InstanceState>> s_allowedTransitions = new()
     {
         [InstanceState.Created] = new() { InstanceState.Starting },
         [InstanceState.Stopped] = new() { InstanceState.Starting, InstanceState.Deleted },
@@ -28,7 +28,7 @@ public class Instance(string instanceId, string sessionName, string mapName, int
 
     public Result<Unit> TransitionTo(InstanceState newState)
     {
-        if (!AllowedTransitions.TryGetValue(State, out var allowedStates))
+        if (!s_allowedTransitions.TryGetValue(State, out var allowedStates))
         {
             return Result.Failure<Unit>($"No transitions defined for state {State}");
         }

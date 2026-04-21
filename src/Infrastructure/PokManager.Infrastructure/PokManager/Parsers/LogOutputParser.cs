@@ -9,12 +9,12 @@ namespace PokManager.Infrastructure.PokManager.Parsers;
 /// </summary>
 public class LogOutputParser
 {
-    private static readonly Regex LogLinePattern = new(
+    private static readonly Regex s_logLinePattern = new(
         @"^(?<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[Z\+\-\d:]*)\s*\[(?<level>[^\]]+)\]\s*(?<message>.+)$",
         RegexOptions.Compiled
     );
 
-    private static readonly Regex SourcePattern = new(
+    private static readonly Regex s_sourcePattern = new(
         @"\[(?<source>[^\]]+)\]",
         RegexOptions.Compiled
     );
@@ -45,7 +45,7 @@ public class LogOutputParser
                 continue;
             }
 
-            var match = LogLinePattern.Match(trimmedLine);
+            var match = s_logLinePattern.Match(trimmedLine);
             if (!match.Success)
             {
                 // If line doesn't match expected format, treat it as continuation of previous log
@@ -83,7 +83,7 @@ public class LogOutputParser
 
             // Try to extract source from message
             string? source = null;
-            var sourceMatch = SourcePattern.Match(message);
+            var sourceMatch = s_sourcePattern.Match(message);
             if (sourceMatch.Success)
             {
                 source = sourceMatch.Groups["source"].Value;
@@ -125,7 +125,7 @@ public class LogOutputParser
             return Result.Failure<LogEntry>("Instance ID cannot be null or empty");
         }
 
-        var match = LogLinePattern.Match(line.Trim());
+        var match = s_logLinePattern.Match(line.Trim());
         if (!match.Success)
         {
             // Treat as simple info log if pattern doesn't match
@@ -161,7 +161,7 @@ public class LogOutputParser
         };
 
         string? source = null;
-        var sourceMatch = SourcePattern.Match(message);
+        var sourceMatch = s_sourcePattern.Match(message);
         if (sourceMatch.Success)
         {
             source = sourceMatch.Groups["source"].Value;

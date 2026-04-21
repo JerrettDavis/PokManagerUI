@@ -1,12 +1,12 @@
 using FluentAssertions;
 using NSubstitute;
+using PokManager.Application.Models;
 using PokManager.Application.Ports;
 using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
 using PokManager.Domain.Common;
 using PokManager.Domain.Enumerations;
 using PokManager.Infrastructure.Tests.Fakes;
 using Xunit;
-using PokManager.Application.Models;
 
 namespace PokManager.Application.Tests.UseCases.InstanceLifecycle.StopInstance;
 

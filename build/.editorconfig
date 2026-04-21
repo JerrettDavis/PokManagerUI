@@ -1,0 +1,5 @@
+[*.cs]
+# Nuke build fields use attribute-based reflection injection and cannot follow
+# the standard private field naming convention with underscore prefix.
+dotnet_naming_rule.private_fields_should_start_with_underscore.severity = none
+dotnet_naming_rule.private_static_fields_should_start_with_s_underscore.severity = none

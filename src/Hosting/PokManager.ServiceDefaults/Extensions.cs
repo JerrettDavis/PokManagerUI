@@ -110,7 +110,7 @@ public static class Extensions
     {
         // Health checks are enabled in all environments for deployment verification
         // In production, consider adding authentication or IP restrictions if needed
-        
+
         // All health checks must pass for app to be considered ready to accept traffic after starting
         app.MapHealthChecks(HealthEndpointPath);
 

@@ -12,12 +12,12 @@ namespace PokManager.Infrastructure.PokManager.PokManager.Parsers;
 /// </summary>
 public class ListInstancesParser : IPokManagerOutputParser<IReadOnlyList<string>>
 {
-    private static readonly Regex InstancePattern = new(
+    private static readonly Regex s_instancePattern = new(
         @"\bInstance_(?<instanceId>[^\s,\r\n]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex ErrorPattern = new(
+    private static readonly Regex s_errorPattern = new(
         @"Error:\s*(?<message>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
@@ -31,7 +31,7 @@ public class ListInstancesParser : IPokManagerOutputParser<IReadOnlyList<string>
         }
 
         // Check for error messages first
-        var errorMatch = ErrorPattern.Match(output);
+        var errorMatch = s_errorPattern.Match(output);
         if (errorMatch.Success)
         {
             var errorMessage = errorMatch.Groups["message"].Value.Trim();
@@ -40,7 +40,7 @@ public class ListInstancesParser : IPokManagerOutputParser<IReadOnlyList<string>
 
         // Find all instances using regex
         var instances = new List<string>();
-        var matches = InstancePattern.Matches(output);
+        var matches = s_instancePattern.Matches(output);
 
         foreach (Match match in matches)
         {

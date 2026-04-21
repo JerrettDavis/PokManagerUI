@@ -4,7 +4,7 @@ namespace PokManager.Application.UseCases.InstanceLifecycle.CreateInstance;
 
 public class CreateInstanceRequestValidator : AbstractValidator<CreateInstanceRequest>
 {
-    private static readonly string[] ValidMapNames = new[]
+    private static readonly string[] s_validMapNames = new[]
     {
         "TheIsland",
         "TheCenter",
@@ -34,7 +34,7 @@ public class CreateInstanceRequestValidator : AbstractValidator<CreateInstanceRe
 
         RuleFor(x => x.MapName)
             .NotEmpty().WithMessage("Map name cannot be empty")
-            .Must(BeAValidMapName).WithMessage($"Map name must be one of: {string.Join(", ", ValidMapNames)}");
+            .Must(BeAValidMapName).WithMessage($"Map name must be one of: {string.Join(", ", s_validMapNames)}");
 
         RuleFor(x => x.MaxPlayers)
             .InclusiveBetween(1, 127).WithMessage("Max players must be between 1 and 127");
@@ -71,6 +71,6 @@ public class CreateInstanceRequestValidator : AbstractValidator<CreateInstanceRe
 
     private bool BeAValidMapName(string mapName)
     {
-        return ValidMapNames.Contains(mapName, StringComparer.OrdinalIgnoreCase);
+        return s_validMapNames.Contains(mapName, StringComparer.OrdinalIgnoreCase);
     }
 }

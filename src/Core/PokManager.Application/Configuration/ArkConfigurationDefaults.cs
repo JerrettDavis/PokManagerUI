@@ -120,7 +120,7 @@ public static class ArkConfigurationDefaults
             { "bUseSingleplayerSettings", new ArkConfigSetting("False", "Advanced", "Use singleplayer settings multipliers") },
         };
     }
-    
+
     /// <summary>
     /// Represents an ARK configuration setting with metadata.
     /// </summary>
@@ -129,7 +129,7 @@ public static class ArkConfigurationDefaults
         public string DefaultValue { get; }
         public string Category { get; }
         public string Description { get; }
-        
+
         public ArkConfigSetting(string defaultValue, string category, string description)
         {
             DefaultValue = defaultValue;

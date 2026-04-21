@@ -1,6 +1,6 @@
+using System.Net.Http.Json;
 using PokManager.Domain.Common;
 using PokManager.Web.Models;
-using System.Net.Http.Json;
 
 namespace PokManager.Web.Services;
 
@@ -230,7 +230,7 @@ public class InstanceService
 
     // DTOs for API responses
     private record ListInstancesResponseDto(List<InstanceSummaryDto> Instances);
-    
+
     public record DockerComposeConfigDto(
         string InstanceName,
         string ContainerName,

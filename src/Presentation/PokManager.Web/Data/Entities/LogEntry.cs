@@ -11,7 +11,7 @@ public class LogEntry
     public string Level { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public string? Source { get; set; }
-    
+
     // Navigation
     public int? InstanceSnapshotId { get; set; }
     public InstanceSnapshot? InstanceSnapshot { get; set; }

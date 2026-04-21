@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
-using FluentValidation;
 using System.Reflection;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace PokManager.Application.DependencyInjection;
 

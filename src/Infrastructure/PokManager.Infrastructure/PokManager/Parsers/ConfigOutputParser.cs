@@ -9,27 +9,27 @@ namespace PokManager.Infrastructure.PokManager.Parsers;
 /// </summary>
 public class ConfigOutputParser
 {
-    private static readonly Regex ConfigLinePattern = new(
+    private static readonly Regex s_configLinePattern = new(
         @"^(?<key>[^:]+):\s*(?<value>.+)$",
         RegexOptions.Compiled
     );
 
-    private static readonly Regex ValidationResultPattern = new(
+    private static readonly Regex s_validationResultPattern = new(
         @"Configuration\s+validation:\s*(?<result>PASSED|FAILED)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
-    private static readonly Regex ErrorLinePattern = new(
+    private static readonly Regex s_errorLinePattern = new(
         @"^\s*-\s*(?<error>.+)$",
         RegexOptions.Compiled
     );
 
-    private static readonly Regex WarningLinePattern = new(
+    private static readonly Regex s_warningLinePattern = new(
         @"^\s*-\s*(?<warning>.+)$",
         RegexOptions.Compiled
     );
 
-    private static readonly Regex ChangedSettingsPattern = new(
+    private static readonly Regex s_changedSettingsPattern = new(
         @"Changed\s+settings:\s*(?<settings>.+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
@@ -50,7 +50,7 @@ public class ConfigOutputParser
         foreach (var line in lines)
         {
             var trimmedLine = line.Trim();
-            var match = ConfigLinePattern.Match(trimmedLine);
+            var match = s_configLinePattern.Match(trimmedLine);
 
             if (match.Success)
             {
@@ -78,7 +78,7 @@ public class ConfigOutputParser
             return Result.Failure<ConfigurationValidationResult>("Output is null or empty");
         }
 
-        var validationMatch = ValidationResultPattern.Match(output);
+        var validationMatch = s_validationResultPattern.Match(output);
         var isValid = validationMatch.Success &&
             validationMatch.Groups["result"].Value.Equals("PASSED", StringComparison.OrdinalIgnoreCase);
 
@@ -163,7 +163,7 @@ public class ConfigOutputParser
         var success = successPattern.IsMatch(output);
 
         var changedSettings = new List<string>();
-        var changedSettingsMatch = ChangedSettingsPattern.Match(output);
+        var changedSettingsMatch = s_changedSettingsPattern.Match(output);
         if (changedSettingsMatch.Success)
         {
             var settingsStr = changedSettingsMatch.Groups["settings"].Value;

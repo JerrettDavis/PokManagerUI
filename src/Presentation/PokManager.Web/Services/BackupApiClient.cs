@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
-using PokManager.Web.Models;
 using PokManager.Domain.Enumerations;
+using PokManager.Web.Models;
 
 namespace PokManager.Web.Services;
 

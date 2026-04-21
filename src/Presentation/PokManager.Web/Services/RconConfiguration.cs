@@ -51,7 +51,7 @@ public class RconConfiguration
 
     public static RconInstanceConfig? GetByInstanceId(string instanceId)
     {
-        return Instances.Values.FirstOrDefault(c => 
+        return Instances.Values.FirstOrDefault(c =>
             c.InstanceId.Equals(instanceId, StringComparison.OrdinalIgnoreCase));
     }
 }
