@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.15" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
     <PackageReference Include="NuGet.Packaging" Version="7.3.1" />
   </ItemGroup>
 
