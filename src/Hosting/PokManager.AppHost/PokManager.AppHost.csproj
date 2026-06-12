@@ -14,4 +14,8 @@
     <ProjectReference Include="..\PokManager.ServiceDefaults\PokManager.ServiceDefaults.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.5.301" />
+  </ItemGroup>
+
 </Project>
