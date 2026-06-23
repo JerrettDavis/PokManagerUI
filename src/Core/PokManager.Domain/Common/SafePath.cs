@@ -94,20 +94,12 @@ public static partial class SafePath
             return string.Empty;
         }
 
-        // Use String.Replace to strip line breaks (recognized as a log-forging barrier),
-        // then drop any remaining control characters.
-        var withoutNewlines = value
+        // Strip line breaks via String.Replace. CodeQL recognizes String.Replace
+        // removal of CR/LF as a log-forging barrier, so these are the only and final
+        // transformations applied to the value.
+        return value
             .Replace("\r", string.Empty, StringComparison.Ordinal)
-            .Replace("\n", string.Empty, StringComparison.Ordinal)
-            .Replace("\t", " ", StringComparison.Ordinal);
-
-        var builder = new System.Text.StringBuilder(withoutNewlines.Length);
-        foreach (var c in withoutNewlines)
-        {
-            builder.Append(char.IsControl(c) ? ' ' : c);
-        }
-
-        return builder.ToString();
+            .Replace("\n", string.Empty, StringComparison.Ordinal);
     }
 
     /// <summary>
