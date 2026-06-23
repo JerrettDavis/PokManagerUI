@@ -8,7 +8,7 @@ public class LocalDockerService : IDockerService
 {
     public async Task<List<ContainerInfo>> ListContainersAsync(CancellationToken cancellationToken = default)
     {
-        var output = await ExecuteDockerCommandAsync("ps -a --format json", cancellationToken);
+        var output = await ExecuteDockerCommandAsync(cancellationToken, "ps", "-a", "--format", "json");
 
         var containers = new List<ContainerInfo>();
         var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -73,38 +73,43 @@ public class LocalDockerService : IDockerService
 
     public async Task<bool> StartContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
-        var output = await ExecuteDockerCommandAsync($"start {nameOrId}", cancellationToken);
+        var output = await ExecuteDockerCommandAsync(cancellationToken, "start", nameOrId);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<bool> StopContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
-        var output = await ExecuteDockerCommandAsync($"stop {nameOrId}", cancellationToken);
+        var output = await ExecuteDockerCommandAsync(cancellationToken, "stop", nameOrId);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<bool> RestartContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
-        var output = await ExecuteDockerCommandAsync($"restart {nameOrId}", cancellationToken);
+        var output = await ExecuteDockerCommandAsync(cancellationToken, "restart", nameOrId);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<string> GetContainerLogsAsync(string nameOrId, int lines = 100, CancellationToken cancellationToken = default)
     {
-        return await ExecuteDockerCommandAsync($"logs --tail {lines} {nameOrId}", cancellationToken);
+        return await ExecuteDockerCommandAsync(cancellationToken, "logs", "--tail", lines.ToString(), nameOrId);
     }
 
-    private async Task<string> ExecuteDockerCommandAsync(string arguments, CancellationToken cancellationToken)
+    private static async Task<string> ExecuteDockerCommandAsync(CancellationToken cancellationToken, params string[] arguments)
     {
         var psi = new ProcessStartInfo
         {
             FileName = "docker",
-            Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Pass each argument separately so container names cannot inject extra
+        // arguments or shell metacharacters.
+        foreach (var argument in arguments)
+        {
+            psi.ArgumentList.Add(argument);
+        }
 
         using var process = new Process { StartInfo = psi };
         process.Start();

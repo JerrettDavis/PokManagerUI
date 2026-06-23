@@ -60,14 +60,18 @@ public class UploadBackupHandler(
 
             operationLock = lockResult.Value;
 
-            // 3. Create backup directory if it doesn't exist
-            var backupDir = Path.Combine("/opt/pok/instances/backups", request.InstanceId);
+            // 3. Create backup directory if it doesn't exist.
+            // InstanceId is already constrained to [a-zA-Z0-9_-] by the validator; resolve
+            // within the base directory as defense-in-depth against path traversal.
+            var backupDir = SafePath.ResolveWithin(
+                "/opt/pok/instances/backups",
+                SafePath.ValidateIdentifier(request.InstanceId, nameof(request.InstanceId)));
             Directory.CreateDirectory(backupDir);
 
             // 4. Generate backup ID and file path
             var backupId = $"upload-{_clock.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}";
             var fileName = $"{backupId}{Path.GetExtension(request.FileName)}";
-            var filePath = Path.Combine(backupDir, fileName);
+            var filePath = SafePath.ResolveWithin(backupDir, Path.GetFileName(fileName));
 
             // 5. Save the uploaded file
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))

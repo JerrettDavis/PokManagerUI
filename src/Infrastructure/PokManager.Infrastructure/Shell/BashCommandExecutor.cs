@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using PokManager.Domain.Common;
 
 namespace PokManager.Infrastructure.Shell;
 
@@ -28,8 +29,8 @@ public sealed class BashCommandExecutor(ILogger<BashCommandExecutor> logger) : I
 
         _logger.LogDebug(
             "Executing command: {Command} (WorkingDirectory: {WorkingDirectory}, Timeout: {Timeout}s)",
-            command,
-            workingDirectory ?? "<current>",
+            SafePath.SanitizeLogValue(command),
+            SafePath.SanitizeLogValue(workingDirectory ?? "<current>"),
             timeout.TotalSeconds);
 
         var (fileName, arguments) = GetShellExecutable(command);
@@ -139,7 +140,7 @@ public sealed class BashCommandExecutor(ILogger<BashCommandExecutor> logger) : I
         }
         catch (Exception ex) when (ex is not TimeoutException)
         {
-            _logger.LogError(ex, "Error executing command: {Command}", command);
+            _logger.LogError(ex, "Error executing command: {Command}", SafePath.SanitizeLogValue(command));
             throw;
         }
     }

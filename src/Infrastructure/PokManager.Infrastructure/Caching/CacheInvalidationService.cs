@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using PokManager.Application.BackgroundWorkers;
 using PokManager.Application.Caching;
 using PokManager.Application.Ports;
+using PokManager.Domain.Common;
 
 namespace PokManager.Infrastructure.Caching;
 
@@ -35,7 +36,7 @@ public class CacheInvalidationService : ICacheInvalidationService
             cancellationToken
         );
 
-        _logger.LogInformation("Invalidated cache for instance {InstanceId}", instanceId);
+        _logger.LogInformation("Invalidated cache for instance {InstanceId}", SafePath.SanitizeLogValue(instanceId));
     }
 
     public async Task InvalidateBackupsAsync(string instanceId, CancellationToken cancellationToken = default)
@@ -47,7 +48,7 @@ public class CacheInvalidationService : ICacheInvalidationService
             cancellationToken
         );
 
-        _logger.LogInformation("Invalidated backup cache for instance {InstanceId}", instanceId);
+        _logger.LogInformation("Invalidated backup cache for instance {InstanceId}", SafePath.SanitizeLogValue(instanceId));
     }
 
     public async Task InvalidateConfigurationAsync(string instanceId, CancellationToken cancellationToken = default)

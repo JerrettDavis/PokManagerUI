@@ -45,7 +45,10 @@ jobs:
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
-        queries: security-extended,security-and-quality
+        # Security-focused suite only. The code-quality suite (security-and-quality)
+        # emits non-security style/maintainability rules (e.g. cs/useless-upcast,
+        # cs/missed-ternary-operator) that are not security findings.
+        queries: security-extended
         config: |
           paths-ignore:
             - '**/obj/**'

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using PokManager.Domain.Common;
 using PokManager.Infrastructure.Docker.Models;
 
 namespace PokManager.Infrastructure.Docker.Services;
@@ -67,24 +68,28 @@ public class SshDockerService : IDockerService
 
     public async Task<bool> StartContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
+        SafePath.ValidateIdentifier(nameOrId, nameOrId);
         var output = await ExecuteSshCommandAsync($"docker start {nameOrId}", cancellationToken);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<bool> StopContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
+        SafePath.ValidateIdentifier(nameOrId, nameOrId);
         var output = await ExecuteSshCommandAsync($"docker stop {nameOrId}", cancellationToken);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<bool> RestartContainerAsync(string nameOrId, CancellationToken cancellationToken = default)
     {
+        SafePath.ValidateIdentifier(nameOrId, nameOrId);
         var output = await ExecuteSshCommandAsync($"docker restart {nameOrId}", cancellationToken);
         return !string.IsNullOrWhiteSpace(output);
     }
 
     public async Task<string> GetContainerLogsAsync(string nameOrId, int lines = 100, CancellationToken cancellationToken = default)
     {
+        SafePath.ValidateIdentifier(nameOrId, nameOrId);
         return await ExecuteSshCommandAsync($"docker logs --tail {lines} {nameOrId}", cancellationToken);
     }
 

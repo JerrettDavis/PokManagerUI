@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using PokManager.Application.Configuration;
 using PokManager.Application.Ports;
+using PokManager.Domain.Common;
 
 namespace PokManager.Infrastructure.Caching;
 
@@ -35,16 +36,16 @@ public class InMemoryCacheService : ICacheService
         {
             if (DateTimeOffset.UtcNow < entry.ExpiresAt)
             {
-                _logger.LogDebug("Cache hit for key: {Key}", key);
+                _logger.LogDebug("Cache hit for key: {Key}", SafePath.SanitizeLogValue(key));
                 return Task.FromResult(entry.Value as T);
             }
 
             // Expired, remove it
             _cache.TryRemove(key, out _);
-            _logger.LogDebug("Cache expired for key: {Key}", key);
+            _logger.LogDebug("Cache expired for key: {Key}", SafePath.SanitizeLogValue(key));
         }
 
-        _logger.LogDebug("Cache miss for key: {Key}", key);
+        _logger.LogDebug("Cache miss for key: {Key}", SafePath.SanitizeLogValue(key));
         return Task.FromResult<T?>(null);
     }
 
@@ -58,7 +59,7 @@ public class InMemoryCacheService : ICacheService
         };
 
         _cache[key] = entry;
-        _logger.LogDebug("Cached value for key: {Key} with TTL: {Ttl}", key, effectiveTtl);
+        _logger.LogDebug("Cached value for key: {Key} with TTL: {Ttl}", SafePath.SanitizeLogValue(key), effectiveTtl);
 
         // Enforce max size
         if (_cache.Count > _config.MaxCacheSize)
@@ -103,7 +104,7 @@ public class InMemoryCacheService : ICacheService
             _cache.TryRemove(key, out _);
         }
 
-        _logger.LogDebug("Removed {Count} cache entries matching pattern: {Pattern}", keysToRemove.Count, pattern);
+        _logger.LogDebug("Removed {Count} cache entries matching pattern: {Pattern}", keysToRemove.Count, SafePath.SanitizeLogValue(pattern));
         return Task.CompletedTask;
     }
 
