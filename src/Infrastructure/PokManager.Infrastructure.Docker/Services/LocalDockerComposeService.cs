@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using PokManager.Application.Ports;
 using PokManager.Domain.Common;
@@ -184,7 +185,8 @@ public class LocalDockerComposeService : IDockerComposeService
             }
         };
 
-        _logger.LogDebug("Executing: {Command} {Arguments}", command, string.Join(' ', arguments));
+        var safeArgumentsForLog = string.Join(' ', arguments.Select(SanitizeForLog));
+        _logger.LogDebug("Executing: {Command} {Arguments}", command, safeArgumentsForLog);
 
         process.Start();
         process.BeginOutputReadLine();
@@ -199,5 +201,20 @@ public class LocalDockerComposeService : IDockerComposeService
         _logger.LogDebug("Command completed. Exit code: {ExitCode}", exitCode);
 
         return (exitCode, output, error);
+    }
+
+    private static string SanitizeForLog(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        return new string(
+            value
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n")
+                .Where(c => !char.IsControl(c))
+                .ToArray());
     }
 }
