@@ -83,6 +83,27 @@ public static partial class SafePath
     }
 
     /// <summary>
+    /// Neutralizes carriage-return and line-feed characters (and other control
+    /// characters) in a value before it is written to a log, preventing log-forging
+    /// where attacker-controlled input injects forged log lines.
+    /// </summary>
+    public static string SanitizeLogValue(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var builder = new System.Text.StringBuilder(value.Length);
+        foreach (var c in value)
+        {
+            builder.Append(c is '\r' or '\n' ? '_' : char.IsControl(c) ? ' ' : c);
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// Removes shell metacharacters from free-form text so it can be safely embedded
     /// in a double-quoted shell argument. Strips quotes, command-substitution,
     /// redirection, piping, chaining and newline characters.

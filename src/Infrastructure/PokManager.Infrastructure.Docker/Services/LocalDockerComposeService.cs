@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using PokManager.Application.Ports;
 using PokManager.Domain.Common;
@@ -20,7 +19,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
     public async Task<Result<Unit>> UpAsync(string dockerComposeFilePath, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Creating and starting container from {FilePath}", dockerComposeFilePath);
+        _logger.LogInformation("Creating and starting container from {FilePath}", SafePath.SanitizeLogValue(dockerComposeFilePath));
 
         if (!File.Exists(dockerComposeFilePath))
         {
@@ -42,7 +41,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
         if (result.IsSuccess)
         {
-            _logger.LogInformation("Container created and started successfully from {FilePath}", dockerComposeFilePath);
+            _logger.LogInformation("Container created and started successfully from {FilePath}", SafePath.SanitizeLogValue(dockerComposeFilePath));
         }
 
         return result;
@@ -54,7 +53,7 @@ public class LocalDockerComposeService : IDockerComposeService
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Stopping and removing container from {FilePath} (removeVolumes: {RemoveVolumes})",
-            dockerComposeFilePath, removeVolumes);
+            SafePath.SanitizeLogValue(dockerComposeFilePath), removeVolumes);
 
         if (!File.Exists(dockerComposeFilePath))
         {
@@ -71,7 +70,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
         if (result.IsSuccess)
         {
-            _logger.LogInformation("Container stopped and removed from {FilePath}", dockerComposeFilePath);
+            _logger.LogInformation("Container stopped and removed from {FilePath}", SafePath.SanitizeLogValue(dockerComposeFilePath));
         }
 
         return result;
@@ -79,7 +78,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
     public async Task<Result<Unit>> ValidateAsync(string dockerComposeFilePath, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Validating docker-compose file: {FilePath}", dockerComposeFilePath);
+        _logger.LogDebug("Validating docker-compose file: {FilePath}", SafePath.SanitizeLogValue(dockerComposeFilePath));
 
         if (!File.Exists(dockerComposeFilePath))
         {
@@ -99,7 +98,7 @@ public class LocalDockerComposeService : IDockerComposeService
         string dockerComposeFilePath,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Getting status for containers in {FilePath}", dockerComposeFilePath);
+        _logger.LogDebug("Getting status for containers in {FilePath}", SafePath.SanitizeLogValue(dockerComposeFilePath));
 
         if (!File.Exists(dockerComposeFilePath))
         {
@@ -185,8 +184,7 @@ public class LocalDockerComposeService : IDockerComposeService
             }
         };
 
-        var safeArgumentsForLog = string.Join(' ', arguments.Select(SanitizeForLog));
-        _logger.LogDebug("Executing: {Command} {Arguments}", command, safeArgumentsForLog);
+        _logger.LogDebug("Executing: {Command} {Arguments}", command, SafePath.SanitizeLogValue(string.Join(' ', arguments)));
 
         process.Start();
         process.BeginOutputReadLine();
@@ -201,20 +199,5 @@ public class LocalDockerComposeService : IDockerComposeService
         _logger.LogDebug("Command completed. Exit code: {ExitCode}", exitCode);
 
         return (exitCode, output, error);
-    }
-
-    private static string SanitizeForLog(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return value;
-        }
-
-        return new string(
-            value
-                .Replace("\r", "\\r")
-                .Replace("\n", "\\n")
-                .Where(c => !char.IsControl(c))
-                .ToArray());
     }
 }

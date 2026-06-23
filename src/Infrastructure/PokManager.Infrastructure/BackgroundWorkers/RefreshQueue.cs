@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using PokManager.Application.BackgroundWorkers;
 using PokManager.Application.Ports;
+using PokManager.Domain.Common;
 
 namespace PokManager.Infrastructure.BackgroundWorkers;
 
@@ -27,7 +28,7 @@ public class RefreshQueue : IRefreshQueue
     {
         await _channel.Writer.WriteAsync(request, cancellationToken);
         _logger.LogDebug("Enqueued refresh request: {Type} for {InstanceId}",
-            request.Type, request.InstanceId ?? "all");
+            request.Type, SafePath.SanitizeLogValue(request.InstanceId ?? "all"));
     }
 
     public async Task<RefreshRequest?> DequeueAsync(CancellationToken cancellationToken = default)
