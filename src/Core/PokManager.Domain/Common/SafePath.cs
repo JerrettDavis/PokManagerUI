@@ -94,10 +94,17 @@ public static partial class SafePath
             return string.Empty;
         }
 
-        var builder = new System.Text.StringBuilder(value.Length);
-        foreach (var c in value)
+        // Use String.Replace to strip line breaks (recognized as a log-forging barrier),
+        // then drop any remaining control characters.
+        var withoutNewlines = value
+            .Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace("\t", " ", StringComparison.Ordinal);
+
+        var builder = new System.Text.StringBuilder(withoutNewlines.Length);
+        foreach (var c in withoutNewlines)
         {
-            builder.Append(c is '\r' or '\n' ? '_' : char.IsControl(c) ? ' ' : c);
+            builder.Append(char.IsControl(c) ? ' ' : c);
         }
 
         return builder.ToString();
