@@ -39,7 +39,7 @@ public sealed class PokManagerClient : IPokManagerClient
     /// argument injection through the bash executor.
     /// </summary>
     private static string ValidateId(string value, string paramName) =>
-        SafePath.ValidateIdentifier(value, paramName);
+        SafePath.SanitizeLogValue(SafePath.ValidateIdentifier(value, paramName));
 
     #region Discovery & Query - IMPLEMENTED
 
@@ -107,7 +107,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -162,7 +162,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -310,7 +310,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -378,7 +378,7 @@ public sealed class PokManagerClient : IPokManagerClient
         StopInstanceOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -465,7 +465,7 @@ public sealed class PokManagerClient : IPokManagerClient
         RestartInstanceOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -552,7 +552,7 @@ public sealed class PokManagerClient : IPokManagerClient
         bool deleteBackups = false,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -633,7 +633,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -696,7 +696,7 @@ public sealed class PokManagerClient : IPokManagerClient
         CreateBackupOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -782,9 +782,9 @@ public sealed class PokManagerClient : IPokManagerClient
         RestoreBackupOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
-        SafePath.ValidateFileToken(backupId, nameof(backupId));
+        backupId = SafePath.SanitizeLogValue(SafePath.ValidateFileToken(backupId, nameof(backupId)));
 
         try
         {
@@ -852,9 +852,9 @@ public sealed class PokManagerClient : IPokManagerClient
         string backupId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
-        SafePath.ValidateFileToken(backupId, nameof(backupId));
+        backupId = SafePath.SanitizeLogValue(SafePath.ValidateFileToken(backupId, nameof(backupId)));
 
         try
         {
@@ -932,9 +932,9 @@ public sealed class PokManagerClient : IPokManagerClient
         string backupId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
-        SafePath.ValidateFileToken(backupId, nameof(backupId));
+        backupId = SafePath.SanitizeLogValue(SafePath.ValidateFileToken(backupId, nameof(backupId)));
 
         try
         {
@@ -993,7 +993,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1054,7 +1054,7 @@ public sealed class PokManagerClient : IPokManagerClient
         ApplyUpdatesOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1142,7 +1142,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1203,7 +1203,7 @@ public sealed class PokManagerClient : IPokManagerClient
         IReadOnlyDictionary<string, string> configuration,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         if (configuration == null)
         {
@@ -1282,7 +1282,7 @@ public sealed class PokManagerClient : IPokManagerClient
         ApplyConfigurationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         if (configuration == null)
         {
@@ -1380,7 +1380,7 @@ public sealed class PokManagerClient : IPokManagerClient
         GetLogsOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1467,7 +1467,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         _logger.LogDebug("Starting log stream for instance {InstanceId}", instanceId);
 
@@ -1502,7 +1502,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         var startTime = DateTimeOffset.UtcNow;
 
@@ -1577,7 +1577,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string message,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -1636,7 +1636,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1685,7 +1685,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string command,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(instanceId, nameof(instanceId));
+        instanceId = ValidateId(instanceId, nameof(instanceId));
 
         if (string.IsNullOrWhiteSpace(command))
         {
