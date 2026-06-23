@@ -35,7 +35,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
         var result = await ExecuteDockerComposeAsync(
             dockerComposeFilePath,
-            "up -d",
+            ["up", "-d"],
             "Create and start container",
             cancellationToken);
 
@@ -60,7 +60,7 @@ public class LocalDockerComposeService : IDockerComposeService
             return Result.Failure<Unit>($"Docker compose file not found: {dockerComposeFilePath}");
         }
 
-        var arguments = removeVolumes ? "down -v" : "down";
+        string[] arguments = removeVolumes ? ["down", "-v"] : ["down"];
 
         var result = await ExecuteDockerComposeAsync(
             dockerComposeFilePath,
@@ -87,7 +87,7 @@ public class LocalDockerComposeService : IDockerComposeService
 
         var result = await ExecuteDockerComposeAsync(
             dockerComposeFilePath,
-            "config --quiet",
+            ["config", "--quiet"],
             "Validate docker-compose file",
             cancellationToken);
 
@@ -107,8 +107,8 @@ public class LocalDockerComposeService : IDockerComposeService
 
         var (exitCode, output, error) = await ExecuteCommandAsync(
             "docker-compose",
-            $"-f \"{dockerComposeFilePath}\" ps",
-            cancellationToken);
+            cancellationToken,
+            "-f", dockerComposeFilePath, "ps");
 
         if (exitCode != 0)
         {
@@ -121,14 +121,16 @@ public class LocalDockerComposeService : IDockerComposeService
 
     private async Task<Result<Unit>> ExecuteDockerComposeAsync(
         string dockerComposeFilePath,
-        string arguments,
+        string[] composeArgs,
         string operation,
         CancellationToken cancellationToken)
     {
+        string[] arguments = ["-f", dockerComposeFilePath, .. composeArgs];
+
         var (exitCode, output, error) = await ExecuteCommandAsync(
             "docker-compose",
-            $"-f \"{dockerComposeFilePath}\" {arguments}",
-            cancellationToken);
+            cancellationToken,
+            arguments);
 
         if (exitCode != 0)
         {
@@ -143,21 +145,25 @@ public class LocalDockerComposeService : IDockerComposeService
 
     private async Task<(int exitCode, string output, string error)> ExecuteCommandAsync(
         string command,
-        string arguments,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        params string[] arguments)
     {
-        var process = new Process
+        var startInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = command,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            FileName = command,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
+        // Pass each argument separately so file paths and flags cannot inject
+        // additional arguments or shell metacharacters.
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        var process = new Process { StartInfo = startInfo };
 
         var outputBuilder = new System.Text.StringBuilder();
         var errorBuilder = new System.Text.StringBuilder();
@@ -178,7 +184,7 @@ public class LocalDockerComposeService : IDockerComposeService
             }
         };
 
-        _logger.LogDebug("Executing: {Command} {Arguments}", command, arguments);
+        _logger.LogDebug("Executing: {Command} {Arguments}", command, string.Join(' ', arguments));
 
         process.Start();
         process.BeginOutputReadLine();

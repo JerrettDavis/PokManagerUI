@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PokManager.Domain.Common;
 
 namespace PokManager.ApiService.Endpoints;
 
@@ -17,7 +18,13 @@ public static class LogEndpoints
         {
             try
             {
-                var logPath = $"/home/pokuser/asa_server/Instance_{instanceId}/Saved/Logs/ShooterGame.log";
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
+                var logPath = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "Saved", "Logs", "ShooterGame.log");
 
                 if (!File.Exists(logPath))
                 {
@@ -53,7 +60,13 @@ public static class LogEndpoints
         {
             try
             {
-                var logsDir = $"/home/pokuser/asa_server/Instance_{instanceId}/Saved/Logs";
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
+                var logsDir = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "Saved", "Logs");
 
                 if (!Directory.Exists(logsDir))
                 {
@@ -91,10 +104,16 @@ public static class LogEndpoints
         {
             try
             {
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
                 // Sanitize filename to prevent directory traversal
                 fileName = Path.GetFileName(fileName);
 
-                var logPath = Path.Combine($"/home/pokuser/asa_server/Instance_{instanceId}/Saved/Logs", fileName);
+                var logPath = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "Saved", "Logs", fileName);
 
                 if (!File.Exists(logPath))
                 {
@@ -121,7 +140,13 @@ public static class LogEndpoints
         {
             try
             {
-                var logsDir = $"/home/pokuser/asa_server/Instance_{instanceId}/API_Logs";
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
+                var logsDir = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "API_Logs");
 
                 if (!Directory.Exists(logsDir))
                 {
@@ -169,7 +194,13 @@ public static class LogEndpoints
         {
             try
             {
-                var logsDir = $"/home/pokuser/asa_server/Instance_{instanceId}/API_Logs";
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
+                var logsDir = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "API_Logs");
 
                 if (!Directory.Exists(logsDir))
                 {
@@ -206,10 +237,16 @@ public static class LogEndpoints
         {
             try
             {
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
                 // Sanitize filename to prevent directory traversal
                 fileName = Path.GetFileName(fileName);
 
-                var logPath = Path.Combine($"/home/pokuser/asa_server/Instance_{instanceId}/API_Logs", fileName);
+                var logPath = SafePath.ResolveWithin(
+                    "/home/pokuser/asa_server", $"Instance_{instanceId}", "API_Logs", fileName);
 
                 if (!File.Exists(logPath))
                 {

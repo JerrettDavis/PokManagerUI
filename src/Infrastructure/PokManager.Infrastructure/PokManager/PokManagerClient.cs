@@ -32,6 +32,15 @@ public sealed class PokManagerClient : IPokManagerClient
         _configuration.Validate();
     }
 
+    /// <summary>
+    /// Validates an externally-supplied identifier (instance id, backup id, ...) before
+    /// it is interpolated into a shell command. Rejects anything other than
+    /// alphanumeric characters, hyphens and underscores, which prevents command and
+    /// argument injection through the bash executor.
+    /// </summary>
+    private static string ValidateId(string value, string paramName) =>
+        SafePath.ValidateIdentifier(value, paramName);
+
     #region Discovery & Query - IMPLEMENTED
 
     public async Task<Result<IReadOnlyList<string>>> ListInstancesAsync(
@@ -98,10 +107,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -156,10 +162,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -307,10 +310,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -378,10 +378,7 @@ public sealed class PokManagerClient : IPokManagerClient
         StopInstanceOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -468,10 +465,7 @@ public sealed class PokManagerClient : IPokManagerClient
         RestartInstanceOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -558,10 +552,7 @@ public sealed class PokManagerClient : IPokManagerClient
         bool deleteBackups = false,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -642,10 +633,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -708,10 +696,7 @@ public sealed class PokManagerClient : IPokManagerClient
         CreateBackupOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -797,15 +782,9 @@ public sealed class PokManagerClient : IPokManagerClient
         RestoreBackupOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
-        if (string.IsNullOrWhiteSpace(backupId))
-        {
-            throw new ArgumentException("Backup ID cannot be null or empty", nameof(backupId));
-        }
+        SafePath.ValidateFileToken(backupId, nameof(backupId));
 
         try
         {
@@ -873,15 +852,9 @@ public sealed class PokManagerClient : IPokManagerClient
         string backupId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
-        if (string.IsNullOrWhiteSpace(backupId))
-        {
-            throw new ArgumentException("Backup ID cannot be null or empty", nameof(backupId));
-        }
+        SafePath.ValidateFileToken(backupId, nameof(backupId));
 
         try
         {
@@ -959,15 +932,9 @@ public sealed class PokManagerClient : IPokManagerClient
         string backupId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
-        if (string.IsNullOrWhiteSpace(backupId))
-        {
-            throw new ArgumentException("Backup ID cannot be null or empty", nameof(backupId));
-        }
+        SafePath.ValidateFileToken(backupId, nameof(backupId));
 
         try
         {
@@ -1026,10 +993,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1090,10 +1054,7 @@ public sealed class PokManagerClient : IPokManagerClient
         ApplyUpdatesOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1181,10 +1142,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1245,10 +1203,7 @@ public sealed class PokManagerClient : IPokManagerClient
         IReadOnlyDictionary<string, string> configuration,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         if (configuration == null)
         {
@@ -1264,7 +1219,11 @@ public sealed class PokManagerClient : IPokManagerClient
 
             foreach (var (key, value) in configuration)
             {
-                commandBuilder.Append($" --{key} \"{value}\"");
+                // Validate keys as identifiers and strip shell metacharacters from values
+                // so user-supplied configuration cannot inject shell commands.
+                var safeKey = SafePath.ValidateIdentifier(key, nameof(key));
+                var safeValue = SafePath.SanitizeShellText(value);
+                commandBuilder.Append($" --{safeKey} \"{safeValue}\"");
             }
 
             var command = commandBuilder.ToString();
@@ -1323,10 +1282,7 @@ public sealed class PokManagerClient : IPokManagerClient
         ApplyConfigurationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         if (configuration == null)
         {
@@ -1342,7 +1298,11 @@ public sealed class PokManagerClient : IPokManagerClient
 
             foreach (var (key, value) in configuration)
             {
-                commandBuilder.Append($" --{key} \"{value}\"");
+                // Validate keys as identifiers and strip shell metacharacters from values
+                // so user-supplied configuration cannot inject shell commands.
+                var safeKey = SafePath.ValidateIdentifier(key, nameof(key));
+                var safeValue = SafePath.SanitizeShellText(value);
+                commandBuilder.Append($" --{safeKey} \"{safeValue}\"");
             }
 
             if (options != null)
@@ -1420,10 +1380,7 @@ public sealed class PokManagerClient : IPokManagerClient
         GetLogsOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1510,10 +1467,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         _logger.LogDebug("Starting log stream for instance {InstanceId}", instanceId);
 
@@ -1548,10 +1502,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         var startTime = DateTimeOffset.UtcNow;
 
@@ -1626,10 +1577,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string message,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -1640,7 +1588,10 @@ public sealed class PokManagerClient : IPokManagerClient
         {
             _logger.LogDebug("Sending chat message to instance {InstanceId}", instanceId);
 
-            var command = $"\"{_configuration.PokManagerScriptPath}\" rcon {instanceId} --broadcast \"{message}\"";
+            // Strip shell metacharacters from the free-form message before embedding
+            // it in a shell command to prevent command injection.
+            var safeMessage = SafePath.SanitizeShellText(message);
+            var command = $"\"{_configuration.PokManagerScriptPath}\" rcon {instanceId} --broadcast \"{safeMessage}\"";
 
             var result = await _bashExecutor.ExecuteAsync(
                 command,
@@ -1685,10 +1636,7 @@ public sealed class PokManagerClient : IPokManagerClient
         string instanceId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         try
         {
@@ -1737,21 +1685,22 @@ public sealed class PokManagerClient : IPokManagerClient
         string command,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(instanceId))
-        {
-            throw new ArgumentException("Instance ID cannot be null or empty", nameof(instanceId));
-        }
+        ValidateId(instanceId, nameof(instanceId));
 
         if (string.IsNullOrWhiteSpace(command))
         {
             throw new ArgumentException("Command cannot be null or empty", nameof(command));
         }
 
+        // The command must be a single pok-manager subcommand token. Reject anything
+        // containing whitespace or shell metacharacters to prevent command injection.
+        var safeCommand = ValidateId(command, nameof(command));
+
         try
         {
-            _logger.LogDebug("Executing custom command for instance {InstanceId}: {Command}", instanceId, command);
+            _logger.LogDebug("Executing custom command for instance {InstanceId}: {Command}", instanceId, safeCommand);
 
-            var bashCommand = $"\"{_configuration.PokManagerScriptPath}\" {command} {instanceId}";
+            var bashCommand = $"\"{_configuration.PokManagerScriptPath}\" {safeCommand} {instanceId}";
 
             var result = await _bashExecutor.ExecuteAsync(
                 bashCommand,

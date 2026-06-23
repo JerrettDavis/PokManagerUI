@@ -68,9 +68,13 @@ public class DockerPokManagerClient : IPokManagerClient
     {
         try
         {
+            // Reject any instance id that could escape the base directory or inject
+            // shell/argument metacharacters before it is used in paths or process args.
+            SafePath.ValidateIdentifier(instanceId, nameof(instanceId));
+
             var basePath = "/home/pokuser/asa_server";
-            var instancePath = Path.Combine(basePath, $"Instance_{instanceId}");
-            var dockerComposePath = Path.Combine(instancePath, $"docker-compose-{instanceId}.yaml");
+            var instancePath = SafePath.ResolveWithin(basePath, $"Instance_{instanceId}");
+            var dockerComposePath = SafePath.ResolveWithin(instancePath, $"docker-compose-{instanceId}.yaml");
 
             // 1. Check if instance directory exists on disk (PRIMARY check)
             if (!Directory.Exists(instancePath))
@@ -135,7 +139,8 @@ public class DockerPokManagerClient : IPokManagerClient
             var playerCount = 0;
 
             // 8. Read configuration from GameUserSettings.ini
-            var configPath = Path.Combine(instancePath, "Saved", "Config", "WindowsServer", "GameUserSettings.ini");
+            var configPath = SafePath.ResolveWithin(
+                instancePath, "Saved", "Config", "WindowsServer", "GameUserSettings.ini");
             var configuration = await ReadGameUserSettingsAsync(configPath, cancellationToken);
 
             // 9. Override with environment variable data (these always take precedence over defaults/INI values)
@@ -258,12 +263,16 @@ public class DockerPokManagerClient : IPokManagerClient
         var psi = new ProcessStartInfo
         {
             FileName = "docker",
-            Arguments = $"inspect {containerName} --format \"{{{{json .Config.Env}}}}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Pass arguments individually so container names cannot inject extra arguments.
+        psi.ArgumentList.Add("inspect");
+        psi.ArgumentList.Add(containerName);
+        psi.ArgumentList.Add("--format");
+        psi.ArgumentList.Add("{{json .Config.Env}}");
 
         using var process = new Process { StartInfo = psi };
         process.Start();
@@ -301,12 +310,16 @@ public class DockerPokManagerClient : IPokManagerClient
         var psi = new ProcessStartInfo
         {
             FileName = "docker",
-            Arguments = $"inspect {containerName} --format \"{{{{json .State}}}}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Pass arguments individually so container names cannot inject extra arguments.
+        psi.ArgumentList.Add("inspect");
+        psi.ArgumentList.Add(containerName);
+        psi.ArgumentList.Add("--format");
+        psi.ArgumentList.Add("{{json .State}}");
 
         using var process = new Process { StartInfo = psi };
         process.Start();

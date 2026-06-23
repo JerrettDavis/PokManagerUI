@@ -7,6 +7,7 @@ using PokManager.Application.UseCases.InstanceLifecycle.RestartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StartInstance;
 using PokManager.Application.UseCases.InstanceLifecycle.StopInstance;
 using PokManager.Application.UseCases.InstanceQuery;
+using PokManager.Domain.Common;
 
 namespace PokManager.ApiService.Endpoints;
 
@@ -182,9 +183,15 @@ public static class InstanceEndpoints
         {
             try
             {
+                if (!SafePath.IsSafeIdentifier(instanceId))
+                {
+                    return Results.BadRequest(new { error = "Invalid instance id" });
+                }
+
                 // Path to docker-compose files on the server
                 var basePath = "/home/pokuser/asa_server";
-                var configPath = Path.Combine(basePath, $"Instance_{instanceId}", $"docker-compose-{instanceId}.yaml");
+                var configPath = SafePath.ResolveWithin(
+                    basePath, $"Instance_{instanceId}", $"docker-compose-{instanceId}.yaml");
 
                 if (!File.Exists(configPath))
                 {
