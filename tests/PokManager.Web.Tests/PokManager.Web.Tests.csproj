@@ -8,18 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="bunit" Version="2.8.6" />
+    <PackageReference Include="bunit" Version="2.9.0" />
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
     <PackageReference Include="FluentAssertions" Version="8.10.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <PackageReference Include="TinyBDD" Version="0.19.31" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="TinyBDD" Version="0.19.33" />
     <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
     <!-- Forced transitive upgrade: bunit 2.7.2 pulls AngleSharp 1.4.0, which is vulnerable
          to GHSA-pgww-w46g-26qg / CVE-2026-54570 (mXSS via annotation-xml HTML integration
          point bypass, moderate). 1.5.0 is the first patched release; pin to the latest
          stable line. -->
-    <PackageReference Include="AngleSharp" Version="1.7.0" />
+    <PackageReference Include="AngleSharp" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup>
