@@ -19,7 +19,7 @@
          to GHSA-pgww-w46g-26qg / CVE-2026-54570 (mXSS via annotation-xml HTML integration
          point bypass, moderate). 1.5.0 is the first patched release; pin to the latest
          stable line. -->
-    <PackageReference Include="AngleSharp" Version="1.7.2" />
+    <PackageReference Include="AngleSharp" Version="1.7.3" />
   </ItemGroup>
 
   <ItemGroup>
