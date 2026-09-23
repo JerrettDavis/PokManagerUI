@@ -26,6 +26,12 @@ jobs:
         fail-on-severity: moderate
         fail-on-scopes: runtime
         allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+        # FluentAssertions 8.x moved to the Xceed Community License, which is free for
+        # non-commercial/personal use (this repo). It's test-only (fail-on-scopes: runtime
+        # already excludes it from the runtime graph) and already the adopted major version,
+        # so every routine patch bump was failing this check. Exempted explicitly rather than
+        # broadening allow-licenses.
+        allow-dependencies-licenses: pkg:nuget/FluentAssertions
         comment-summary-in-pr: always
 
   vulnerability-check:
