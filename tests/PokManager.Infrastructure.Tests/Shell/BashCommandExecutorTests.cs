@@ -96,7 +96,7 @@ public class BashCommandExecutorTests
             .Given("a command that writes to stderr", () =>
             {
                 var command = OperatingSystem.IsWindows()
-                    ? "powershell -Command \"Write-Error 'Test Error' 2>&1\""
+                    ? "echo Test Error 1>&2"
                     : "echo 'Test Error' >&2";
 
                 return command;
